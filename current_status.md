@@ -4,8 +4,8 @@ This is the concise handoff source for agents resuming implementation. It record
 
 **Last updated:** 2026-09-27  
 **Updated through task:** `FND-001` through `FND-014`, `ARC-001` through `ARC-012`, `INF-001` through `INF-014`, `INF-022`  
-**Current phase:** Milestone 3 Stage 1 database, ECS services, SES, and OIDC foundations are deployed and verified  
-**Task status:** 2 ready, 166 pending, 0 in progress, 0 blocked, 45 complete
+**Current phase:** Milestone 3 Stage 1 database, SES, OIDC, and ECS service foundations are deployed; ECS acceptance verification is in progress  
+**Task status:** 0 ready, 166 pending, 4 in progress, 0 blocked, 41 complete
 
 ## 1. Current objective
 
@@ -93,9 +93,11 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 ### In progress
 None.
 
+### In progress
+- `INF-015` through `INF-018` — service scaffolds are deployed and healthy; remaining rollback, connectivity, routing, and worker verification is still required.
+
 ### Ready
-- `INF-019` — Create the shared application load balancer.
-- `INF-023` — Add the Stage 1 deployment workflow.
+None.
 
 ### Blocked
 None.
