@@ -55,7 +55,13 @@ export class Stage1FoundationStack extends cdk.Stack {
     new cdk.CfnOutput(this, "VpcId", { value: network.vpc.vpcId });
     const security = new Stage1SecurityGroups(this, "Security", network.vpc);
     new Stage1Database(this, "Database", network.vpc, security.database);
-    new Stage1Compute(this, "Compute", network.vpc);
+    new Stage1Compute(
+      this,
+      "Compute",
+      network.vpc,
+      security.ecs,
+      process.env.BBW_ENABLE_STAGE1_SERVICES === "true",
+    );
     new Stage1Storage(this, "Storage");
     const queues = new Stage1Queues(this, "Queues");
     new Stage1Events(this, "Events", queues.queues.scheduled);

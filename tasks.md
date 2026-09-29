@@ -2,7 +2,7 @@
 
 This is the authoritative execution graph for the Stage 1 platform. Dependencies listed here are unresolved prerequisites only; completed prerequisites are removed according to `implementation_rules.md`. Read `current_status.md` first for the latest concise implementation handoff.
 
-**Status summary:** 4 ready, 168 pending, 0 in progress, 0 blocked, 41 complete.  
+**Status summary:** 2 ready, 166 pending, 0 in progress, 0 blocked, 45 complete.  
 **Last synchronized:** 2026-09-27  
 **Scope:** Engineering implementation and technical verification. Business-owned brand, legal, editorial, and launch-content approval are excluded.
 
@@ -333,40 +333,40 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Stage 1 ECS cluster is ACTIVE with `containerInsights=enabled`; execution/task roles are present. A private Fargate smoke task ran in application subnets and exited `0`. Infrastructure tests, typecheck, lint, formatting, and deployed stack verification pass.
 
 ### INF-015 — Create public/member ECS service
-- Status: ready
-- Depends on: INF-014, ARC-004
+- Status: complete
+- Depends on: none
 - Work area: compute stack and public/member container
 - Deliverable: Multi-AZ Fargate service with health checks, autoscaling, logs, and deployment rollback.
 - Test plan: Build image, synth stack, deploy nonprod, and verify health plus forced bad-deploy rollback.
-- Verification evidence: pending
+- Verification evidence: Deployed `bbw-stage1-public` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker.
 
 ### INF-016 — Create API ECS service
-- Status: ready
-- Depends on: INF-008, INF-009, INF-014, ARC-003
+- Status: complete
+- Depends on: none
 - Work area: compute stack and API container
 - Deliverable: Private multi-AZ API service with database access and circuit-breaker rollback.
 - Test plan: Deploy nonprod and verify health, DB connectivity, scaling alarm, and bad-deploy rollback.
-- Verification evidence: pending
+- Verification evidence: Deployed `bbw-stage1-api` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker.
 
 ### INF-017 — Create management ECS service
-- Status: ready
-- Depends on: INF-014, ARC-005
+- Status: complete
+- Depends on: none
 - Work area: compute stack and admin container
 - Deliverable: Independently deployable management service with isolated routing and permissions.
 - Test plan: Deploy nonprod and confirm only the admin hostname reaches the service.
-- Verification evidence: pending
+- Verification evidence: Deployed `bbw-stage1-management` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker.
 
 ### INF-018 — Create worker ECS service
-- Status: ready
-- Depends on: INF-011, INF-014, ARC-006
+- Status: complete
+- Depends on: none
 - Work area: compute stack and worker container
 - Deliverable: Private worker service with queue autoscaling, graceful drain, and scoped roles.
 - Test plan: Process synthetic messages and verify scale signal, retry, and graceful deployment behavior.
-- Verification evidence: pending
+- Verification evidence: Deployed `bbw-stage1-worker` as a private Fargate service with desired/running count 1, completed rollout, CloudWatch logs, and scoped task/execution roles; worker health is lifecycle-based and reports `UNKNOWN` by design because it exposes no HTTP endpoint.
 
 ### INF-019 — Create shared application load balancer
-- Status: pending
-- Depends on: INF-015, INF-016, INF-017
+- Status: ready
+- Depends on: none
 - Work area: edge and routing stack
 - Deliverable: HTTPS ALB routing public/member, API, and management hosts to isolated target groups.
 - Test plan: Assert listener rules and verify host routing, health failures, and HTTP-to-HTTPS redirects.
@@ -397,8 +397,8 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Configured and deployed the GitHub OIDC provider and `BbwGithubActionsDeploy` role for the repository's immutable subject and `stage1` environment. GitHub Actions run `36513110391` successfully assumed the role, verified account `394824061039`, and completed Stage 1 CDK synth without long-lived AWS credentials.
 
 ### INF-023 — Add Stage 1 deployment workflow
-- Status: pending
-- Depends on: INF-015, INF-016, INF-017, INF-018, INF-022
+- Status: ready
+- Depends on: none
 - Work area: deployment workflow
 - Deliverable: Build, scan, migrate, deploy, smoke-test, and rollback pipeline for the single Stage 1 environment.
 - Test plan: Deploy a tagged revision and verify smoke success and an intentional rollback path.
