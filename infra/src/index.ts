@@ -68,7 +68,12 @@ export class Stage1FoundationStack extends cdk.Stack {
       const repository = process.env.BBW_GITHUB_REPOSITORY;
       if (!repository)
         throw new Error("BBW_GITHUB_REPOSITORY is required when BBW_ENABLE_GITHUB_OIDC=true");
-      new Stage1GithubActionsRole(this, "GithubActions", repository);
+      new Stage1GithubActionsRole(
+        this,
+        "GithubActions",
+        repository,
+        process.env.BBW_GITHUB_IMMUTABLE_SUBJECT,
+      );
     }
   }
 }

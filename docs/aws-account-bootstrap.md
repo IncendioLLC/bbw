@@ -12,4 +12,4 @@ Before deploying CDK, the platform owner must:
 
 The local schema in `infra/src/bootstrap.ts` validates the Stage 1 12-digit account ID, role-name format, and fixed region before a deployment workflow can proceed. No credentials, account IDs, or secret values belong in source control.
 
-SES and GitHub OIDC are opt-in until their owner-controlled domain and repository exist. Leave `BBW_ENABLE_SES` and `BBW_ENABLE_GITHUB_OIDC` unset for the database/network deployment. Enable them only with the corresponding `BBW_SES_DOMAIN` and `BBW_GITHUB_REPOSITORY` values.
+SES and GitHub OIDC are opt-in until their owner-controlled domain and repository exist. Leave `BBW_ENABLE_SES` and `BBW_ENABLE_GITHUB_OIDC` unset for the database/network deployment. Enable them only with the corresponding `BBW_SES_DOMAIN` and `BBW_GITHUB_REPOSITORY` values. If the GitHub organization uses immutable OIDC subjects, also set `BBW_GITHUB_IMMUTABLE_SUBJECT` to the repository subject prefix.

@@ -24,4 +24,31 @@ describe("Stage 1 deployment OIDC", () => {
       },
     });
   });
+
+  it("supports GitHub immutable repository subjects", () => {
+    const stack = new Stack(new App(), "ImmutableOidcTest");
+    new Stage1GithubActionsRole(
+      stack,
+      "Oidc",
+      "IncendioLLC/bbw",
+      "repo:IncendioLLC@335236855/bbw@1393936250",
+    );
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties("AWS::IAM::Role", {
+      AssumeRolePolicyDocument: {
+        Statement: [
+          {
+            Condition: {
+              StringLike: {
+                "token.actions.githubusercontent.com:sub": [
+                  "repo:IncendioLLC/bbw:environment:stage1",
+                  "repo:IncendioLLC@335236855/bbw@1393936250:environment:stage1",
+                ],
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
 });

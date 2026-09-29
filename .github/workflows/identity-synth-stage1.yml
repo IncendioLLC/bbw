@@ -59,4 +59,4 @@ jobs:
           BBW_CDK_ENV: stage1
           BBW_ENABLE_SES: "false"
           BBW_ENABLE_GITHUB_OIDC: "false"
-        run: pnpm exec cdk synth --app 'npx tsx infra/src/index.ts' BbwStage1-stage1
+        run: pnpm --filter @bbw/infra exec cdk synth --app 'npx tsx src/index.ts' BbwStage1-stage1

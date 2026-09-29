@@ -4,13 +4,22 @@ import { Construct } from "constructs";
 export class Stage1GithubActionsRole extends Construct {
   public readonly role: iam.Role;
 
-  public constructor(scope: Construct, id: string, repository = "OWNER/REPOSITORY") {
+  public constructor(
+    scope: Construct,
+    id: string,
+    repository = "OWNER/REPOSITORY",
+    immutableRepositorySubject?: string,
+  ) {
     super(scope, id);
     const provider = new iam.OpenIdConnectProvider(this, "GithubProvider", {
       url: "https://token.actions.githubusercontent.com",
       clientIds: ["sts.amazonaws.com"],
       thumbprints: ["6938fd4d98bab03faadb97b34396831e3780aea1"],
     });
+    const subjects = [
+      `repo:${repository}:environment:stage1`,
+      ...(immutableRepositorySubject ? [`${immutableRepositorySubject}:environment:stage1`] : []),
+    ];
     this.role = new iam.Role(this, "DeployRole", {
       roleName: "BbwGithubActionsDeploy",
       assumedBy: new iam.FederatedPrincipal(
@@ -18,7 +27,8 @@ export class Stage1GithubActionsRole extends Construct {
         {
           StringEquals: { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
           StringLike: {
-            "token.actions.githubusercontent.com:sub": `repo:${repository}:environment:stage1`,
+            "token.actions.githubusercontent.com:sub":
+              subjects.length === 1 ? subjects[0] : subjects,
           },
         },
         "sts:AssumeRoleWithWebIdentity",
