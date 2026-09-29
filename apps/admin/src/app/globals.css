@@ -1,0 +1,145 @@
+:root {
+  color-scheme: light;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: #f3f6f8;
+  color: #15252a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f3f6f8;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.management-layout {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 16rem minmax(0, 1fr);
+}
+
+.management-sidebar {
+  padding: 1.5rem;
+  background: #102d35;
+  color: #f8fbfc;
+}
+
+.management-brand {
+  margin: 0 0 2rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.management-sidebar nav ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.management-sidebar nav a {
+  display: block;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.4rem;
+  text-decoration: none;
+}
+
+.management-sidebar nav a:hover,
+.management-sidebar nav a:focus-visible {
+  background: #214953;
+}
+
+.management-content {
+  padding: 2rem clamp(1rem, 4vw, 3rem);
+}
+
+.management-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.management-header p,
+.management-header h1 {
+  margin: 0;
+}
+
+.management-eyebrow {
+  color: #53696f;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.management-card {
+  max-width: 48rem;
+  padding: 1.5rem;
+  border: 1px solid #d8e0e2;
+  border-radius: 0.65rem;
+  background: white;
+  box-shadow: 0 0.15rem 0.5rem rgb(21 37 42 / 6%);
+}
+
+.management-card h2 {
+  margin-top: 0;
+}
+
+.sign-in-page {
+  display: grid;
+  min-height: 100vh;
+  padding: 1rem;
+  place-items: center;
+}
+
+.sign-in-card {
+  width: min(100%, 28rem);
+  padding: 2rem;
+  border: 1px solid #d8e0e2;
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.sign-in-card h1 {
+  margin: 0.35rem 0 1rem;
+}
+
+@media (max-width: 48rem) {
+  .management-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .management-sidebar {
+    padding: 1rem;
+  }
+
+  .management-sidebar nav ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

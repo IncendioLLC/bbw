@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BBW browser smoke fixture</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, sans-serif;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        background: #f4f7f8;
+        color: #132a2f;
+      }
+
+      main {
+        width: min(32rem, calc(100% - 2rem));
+        padding: 2rem;
+        border: 1px solid #c8d5d8;
+        border-radius: 0.75rem;
+        background: white;
+        box-sizing: border-box;
+      }
+
+      button {
+        min-height: 2.75rem;
+        padding: 0.5rem 1rem;
+        border: 0;
+        border-radius: 0.4rem;
+        background: #145f6b;
+        color: white;
+        font: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>BBW browser testing is ready</h1>
+      <p id="status" role="status">Smoke fixture loaded.</p>
+      <button type="button">Verify interaction</button>
+    </main>
+    <script>
+      document.querySelector("button").addEventListener("click", () => {
+        document.querySelector("#status").textContent = "Interaction verified.";
+      });
+    </script>
+  </body>
+</html>

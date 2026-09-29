@@ -1,0 +1,5 @@
+# Keep generated artifacts out of language statistics and make their status
+# visible to repository tooling. See GENERATED_FILES.md for ownership rules.
+pnpm-lock.yaml linguist-generated=true
+progress.html linguist-generated=true
+**/generated/** linguist-generated=true

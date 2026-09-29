@@ -1,0 +1,71 @@
+name: bbw-local
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bbw}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bbw-local-only}
+      POSTGRES_USER: ${POSTGRES_USER:-bbw}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+          && test "$$(psql -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -tAc
+          "SELECT count(*) FROM pg_extension WHERE extname = 'vector'")" = "1"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.30.5
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: "500"
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    volumes:
+      - mailpit-data:/data
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+
+  localstack:
+    image: localstack/localstack:4.14.0
+    environment:
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      EAGER_SERVICE_LOADING: "1"
+      LS_LOG: warn
+      SERVICES: s3,sqs,dynamodb,events
+    ports:
+      - "127.0.0.1:${LOCALSTACK_PORT:-4566}:4566"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          awslocal s3api list-buckets >/dev/null
+          && awslocal sqs list-queues >/dev/null
+          && awslocal dynamodb list-tables >/dev/null
+          && awslocal events list-event-buses >/dev/null
+      interval: 5s
+      timeout: 10s
+      retries: 18
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  mailpit-data:
+  postgres-data:

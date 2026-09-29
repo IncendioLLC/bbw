@@ -1,0 +1,14 @@
+demo/
+doc/
+node_modules/
+coverage/
+dist/
+.next/
+.turbo/
+progress.html
+tasks.md
+current_status.md
+pnpm-lock.yaml
+*.docx
+*.png
+*.jpeg

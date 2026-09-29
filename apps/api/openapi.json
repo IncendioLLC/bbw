@@ -1,0 +1,29 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BBW Platform API",
+    "version": "0.0.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Service is healthy"
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readiness",
+        "responses": {
+          "200": {
+            "description": "Service is ready"
+          }
+        }
+      }
+    }
+  }
+}

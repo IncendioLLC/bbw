@@ -1,0 +1,24 @@
+{
+  "name": "@bbw/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3001",
+    "lint": "eslint --no-error-on-unmatched-pattern 'src/**/*.{ts,tsx}'",
+    "start": "next start --port 3001",
+    "test": "vitest run",
+    "test:integration": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.3.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@bbw/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./environment": "./src/environment.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint --no-error-on-unmatched-pattern 'src/**/*.ts' 'test/**/*.ts'",
+    "test": "vitest run",
+    "test:integration": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  }
+}

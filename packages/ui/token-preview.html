@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>BBW design-token preview</title>
+<style>
+  :root {
+    font:
+      16px/1.5 system-ui,
+      sans-serif;
+    color: #172033;
+    background: #f4f7fb;
+  }
+  body {
+    max-width: 60rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .swatch {
+    padding: 1rem;
+    border-radius: 0.625rem;
+    min-width: 8rem;
+  }
+</style>
+<h1>BBW design tokens</h1>
+<p>Semantic colors, spacing, and typography preview.</p>
+<div class="swatches">
+  <div class="swatch" style="background: #275dc5; color: #fff">Primary</div>
+  <div class="swatch" style="background: #156f49; color: #fff">Success</div>
+  <div class="swatch" style="background: #b42318; color: #fff">Danger</div>
+  <div class="swatch" style="background: #fff; border: 1px solid #dce3ec">Surface</div>
+</div>
