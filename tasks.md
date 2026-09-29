@@ -338,7 +338,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Work area: compute stack and public/member container
 - Deliverable: Multi-AZ Fargate service with health checks, autoscaling, logs, and deployment rollback.
 - Test plan: Build image, synth stack, deploy nonprod, and verify health plus forced bad-deploy rollback.
-- Verification evidence: Deployed `bbw-stage1-public` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. Full image-build and forced bad-deploy rollback verification remains.
+- Verification evidence: Deployed `bbw-stage1-public` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. A deliberate invalid-image deployment was detected and the healthy revision was restored; automatic circuit-breaker rollback was not observed, so the task remains in progress.
 
 ### INF-016 — Create API ECS service
 - Status: in_progress
@@ -346,7 +346,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Work area: compute stack and API container
 - Deliverable: Private multi-AZ API service with database access and circuit-breaker rollback.
 - Test plan: Deploy nonprod and verify health, DB connectivity, scaling alarm, and bad-deploy rollback.
-- Verification evidence: Deployed `bbw-stage1-api` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. Database connectivity and forced bad-deploy rollback verification remain.
+- Verification evidence: Deployed `bbw-stage1-api` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. A private PostgreSQL TLS smoke task completed with exit code `0`; API-container database connectivity and forced bad-deploy rollback verification remain.
 
 ### INF-017 — Create management ECS service
 - Status: in_progress

@@ -94,7 +94,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 None.
 
 ### In progress
-- `INF-015` through `INF-018` — service scaffolds are deployed and healthy; remaining rollback, connectivity, routing, and worker verification is still required.
+- `INF-015` through `INF-018` — service scaffolds are deployed and healthy. Public bad-image detection was verified but automatic rollback was not observed; API private PostgreSQL smoke passed separately, while API-container connectivity, ALB routing, and worker queue behavior remain under verification.
 
 ### Ready
 None.
