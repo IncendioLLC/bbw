@@ -1,0 +1,62 @@
+name: Stage 1 OIDC identity and synth
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: stage1-identity-synth
+  cancel-in-progress: true
+
+jobs:
+  identity-and-synth:
+    name: Verify AWS OIDC and CDK synth
+    runs-on: ubuntu-latest
+    environment: stage1
+    timeout-minutes: 20
+    env:
+      AWS_REGION: us-east-1
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      BBW_STAGE1_ACCOUNT: ${{ vars.BBW_STAGE1_ACCOUNT }}
+      BBW_SES_DOMAIN: ${{ vars.BBW_SES_DOMAIN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: bbw-stage1-oidc-synth
+
+      - name: Verify AWS identity
+        run: |
+          test -n "$BBW_STAGE1_ACCOUNT"
+          test "$(aws sts get-caller-identity --query Account --output text)" = "$BBW_STAGE1_ACCOUNT"
+          aws sts get-caller-identity
+
+      - name: Synthesize Stage 1 infrastructure
+        env:
+          BBW_CDK_ENV: stage1
+          BBW_ENABLE_SES: "false"
+          BBW_ENABLE_GITHUB_OIDC: "false"
+        run: pnpm exec cdk synth --app 'npx tsx infra/src/index.ts' BbwStage1-stage1
