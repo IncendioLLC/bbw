@@ -11,5 +11,15 @@ describe("Stage 1 email", () => {
     template.resourceCountIs("AWS::SES::EmailIdentity", 1);
     template.resourceCountIs("AWS::SES::ConfigurationSet", 1);
     template.resourceCountIs("AWS::SNS::Topic", 1);
+    template.resourceCountIs("AWS::SQS::Queue", 1);
+  });
+
+  it("can attach infrastructure to an already verified identity", () => {
+    const stack = new Stack(new App(), "ExistingEmailTest");
+    new Stage1Email(stack, "Email", "verified.example.com", true);
+    const template = Template.fromStack(stack);
+    template.resourceCountIs("AWS::SES::EmailIdentity", 0);
+    template.resourceCountIs("AWS::SES::ConfigurationSet", 1);
+    template.resourceCountIs("AWS::SQS::Queue", 1);
   });
 });

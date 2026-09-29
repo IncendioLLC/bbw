@@ -2,7 +2,7 @@
 
 This is the authoritative execution graph for the Stage 1 platform. Dependencies listed here are unresolved prerequisites only; completed prerequisites are removed according to `implementation_rules.md`. Read `current_status.md` first for the latest concise implementation handoff.
 
-**Status summary:** 0 ready, 172 pending, 0 in progress, 1 blocked, 40 complete.  
+**Status summary:** 4 ready, 168 pending, 0 in progress, 0 blocked, 41 complete.  
 **Last synchronized:** 2026-09-27  
 **Scope:** Engineering implementation and technical verification. Business-owned brand, legal, editorial, and launch-content approval are excluded.
 
@@ -317,12 +317,12 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Added governed Stage 1 EventBridge bus and hourly/daily schedules targeting the scheduled queue. Fourteen infrastructure tests, typecheck, lint, formatting, and synth pass; deployed event delivery remains a later environment check.
 
 ### INF-013 — Configure SES sending identity
-- Status: blocked
+- Status: complete
 - Depends on: none
 - Work area: email infrastructure
 - Deliverable: Domain identity, DKIM, event destination, configuration set, and bounce/complaint routing.
 - Test plan: Verify DNS records and deliver a tagged test email with captured delivery event.
-- Verification evidence: Configured `bbw.incendiollc.com` as the Stage 1 SES identity input and generated the SES DKIM identity. The identity is currently pending DNS verification; tagged delivery-event capture remains pending until DNS ownership is verified. SES infrastructure tests, typecheck, lint, formatting, and synth-level checks pass.
+- Verification evidence: Verified `bbw.incendiollc.com` with SES Easy DKIM (`VerificationStatus=SUCCESS`, `VerifiedForSendingStatus=true`, DKIM `SUCCESS`). Deployed the Stage 1 configuration set, SNS event destination, and encrypted SQS capture queue. Sent tagged SES simulator message `010001a0eb128778-195572aa-1e96-475c-96ec-9cb936997436-000000` with `bbw-test=inf-013`; captured the SNS delivery event in SQS and confirmed the configuration-set and tag metadata. Infrastructure typecheck and deployed stack verification pass.
 
 ### INF-014 — Create ECS cluster and execution roles
 - Status: complete
@@ -333,7 +333,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Stage 1 ECS cluster is ACTIVE with `containerInsights=enabled`; execution/task roles are present. A private Fargate smoke task ran in application subnets and exited `0`. Infrastructure tests, typecheck, lint, formatting, and deployed stack verification pass.
 
 ### INF-015 — Create public/member ECS service
-- Status: pending
+- Status: ready
 - Depends on: INF-014, ARC-004
 - Work area: compute stack and public/member container
 - Deliverable: Multi-AZ Fargate service with health checks, autoscaling, logs, and deployment rollback.
@@ -341,7 +341,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### INF-016 — Create API ECS service
-- Status: pending
+- Status: ready
 - Depends on: INF-008, INF-009, INF-014, ARC-003
 - Work area: compute stack and API container
 - Deliverable: Private multi-AZ API service with database access and circuit-breaker rollback.
@@ -349,7 +349,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### INF-017 — Create management ECS service
-- Status: pending
+- Status: ready
 - Depends on: INF-014, ARC-005
 - Work area: compute stack and admin container
 - Deliverable: Independently deployable management service with isolated routing and permissions.
@@ -357,7 +357,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### INF-018 — Create worker ECS service
-- Status: pending
+- Status: ready
 - Depends on: INF-011, INF-014, ARC-006
 - Work area: compute stack and worker container
 - Deliverable: Private worker service with queue autoscaling, graceful drain, and scoped roles.

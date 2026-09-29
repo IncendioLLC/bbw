@@ -62,7 +62,12 @@ export class Stage1FoundationStack extends cdk.Stack {
     if (externalIntegrations.ses) {
       const domain = process.env.BBW_SES_DOMAIN;
       if (!domain) throw new Error("BBW_SES_DOMAIN is required when BBW_ENABLE_SES=true");
-      new Stage1Email(this, "Email", domain);
+      new Stage1Email(
+        this,
+        "Email",
+        domain,
+        process.env.BBW_SES_USE_EXISTING_IDENTITY === "true",
+      );
     }
     if (externalIntegrations.githubOidc) {
       const repository = process.env.BBW_GITHUB_REPOSITORY;
