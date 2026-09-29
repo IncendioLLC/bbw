@@ -80,9 +80,9 @@ export class Stage1Compute extends Construct {
       image: ecs.ContainerImage.fromRegistry("public.ecr.aws/docker/library/nginx:1.27-alpine"),
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: serviceName, logGroup: logsGroup }),
       essential: true,
-      ...(exposesHttp
-        ? { healthCheck: { command: ["CMD-SHELL", "wget -q -O - http://localhost:80/ || exit 1"] } }
-        : {}),
+      healthCheck: exposesHttp
+        ? { command: ["CMD-SHELL", "wget -q -O - http://localhost:80/ || exit 1"] }
+        : { command: ["CMD-SHELL", "nginx -t || exit 1"] },
     });
     if (exposesHttp) container.addPortMappings({ containerPort: 80 });
     new ecs.FargateService(this, `${id}Service`, {

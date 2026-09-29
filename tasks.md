@@ -362,7 +362,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Work area: compute stack and worker container
 - Deliverable: Private worker service with queue autoscaling, graceful drain, and scoped roles.
 - Test plan: Process synthetic messages and verify scale signal, retry, and graceful deployment behavior.
-- Verification evidence: Deployed `bbw-stage1-worker` as a private Fargate service with desired/running count 1, completed rollout, CloudWatch logs, and scoped task/execution roles; worker health is lifecycle-based and reports `UNKNOWN` by design because it exposes no HTTP endpoint. Synthetic queue processing, scale signal, retry, and graceful drain verification remain.
+- Verification evidence: Deployed `bbw-stage1-worker` as a private Fargate service with desired/running count 1, completed rollout, CloudWatch logs, scoped task/execution roles, and an `nginx -t` container health check now reporting `HEALTHY`. Synthetic queue processing, scale signal, retry, and graceful drain verification remain.
 
 ### INF-019 — Create shared application load balancer
 - Status: pending
