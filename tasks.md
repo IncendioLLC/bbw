@@ -2,7 +2,7 @@
 
 This is the authoritative execution graph for the Stage 1 platform. Dependencies listed here are unresolved prerequisites only; completed prerequisites are removed according to `implementation_rules.md`. Read `current_status.md` first for the latest concise implementation handoff.
 
-**Status summary:** 0 ready, 172 pending, 0 in progress, 2 blocked, 39 complete.  
+**Status summary:** 0 ready, 172 pending, 0 in progress, 1 blocked, 40 complete.  
 **Last synchronized:** 2026-09-27  
 **Scope:** Engineering implementation and technical verification. Business-owned brand, legal, editorial, and launch-content approval are excluded.
 
@@ -389,12 +389,12 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### INF-022 — Configure GitHub Actions OIDC deployment roles
-- Status: blocked
+- Status: complete
 - Depends on: none
 - Work area: deployment IAM and workflows
 - Deliverable: Branch/environment-restricted OIDC roles without long-lived AWS credentials.
 - Test plan: Inspect trust policies and execute a nonprod identity/synth workflow.
-- Verification evidence: Configured and deployed the GitHub OIDC provider and `BbwGithubActionsDeploy` role for `repo:IncendioLLC/bbw:environment:stage1`; the trust policy is restricted to the `stage1` environment and `sts.amazonaws.com`. The repository currently exposes no resolvable `HEAD`, so the required non-production identity/synth workflow cannot run until the repository has a workflow commit and `stage1` environment configuration.
+- Verification evidence: Configured and deployed the GitHub OIDC provider and `BbwGithubActionsDeploy` role for the repository's immutable subject and `stage1` environment. GitHub Actions run `36513110391` successfully assumed the role, verified account `394824061039`, and completed Stage 1 CDK synth without long-lived AWS credentials.
 
 ### INF-023 — Add Stage 1 deployment workflow
 - Status: pending
