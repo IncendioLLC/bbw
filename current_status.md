@@ -2,9 +2,9 @@
 
 This is the concise handoff source for agents resuming implementation. It records current truth, not a full history. Read it before `tasks.md`, then inspect only the files relevant to the selected task.
 
-**Last updated:** 2026-09-29  
+**Last updated:** 2026-09-30  
 **Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-019`, `INF-022`  
-**Current phase:** Milestone 3 CloudFront edge is deployed and verified; workflow acceptance remains blocked on repository prerequisites  
+**Current phase:** Milestone 3 edge and normal deployment workflow are deployed and verified; only intentional workflow rollback verification remains  
 **Task status:** 7 ready, 158 pending, 0 in progress, 1 blocked, 47 complete
 
 ## 1. Current objective
@@ -103,7 +103,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `INF-021` — Configure AWS WAF protections.
 
 ### Blocked
-- `INF-023` — Run `36660231983` passed OIDC, quality gates, synth, and CDK bootstrap authorization; deployment is blocked by the existing owner-managed `bbw-stage1-edge` ALB conflicting with CloudFormation ownership.
+- `INF-023` — The ALB ownership conflict is resolved and normal workflow run `36667867705` passed. An intentionally failed workflow run still needs to verify the complete recovery path, including the guarded restore step.
 
 ## 7. Known risks and assumptions
 
@@ -113,8 +113,8 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - The $500/month infrastructure target is soft and does not authorize weakening reliability or security.
 - The final security scan is green. The license gate currently reports newly introduced transitive `LGPL-3.0-or-later` (`@img/sharp-libvips-darwin-arm64`) and `CC-BY-4.0` (`caniuse-lite`) licenses from the Next.js shells; legal/owner approval or dependency substitution is required before the license gate can be green again.
 - AWS account isolation is deferred; before production scale-up, a follow-up task must add Organizations accounts and promotion boundaries.
-- INF-020's member hostname is approved as `app.bbw.incendiollc.com`; isolated CloudFront distributions are deployed and verified against the ALB origin, including the public member route. The public DNS alias remains owner-managed. INF-023's environment and CDK bootstrap access are configured; run `36660231983` passed all pre-deploy gates but CloudFormation failed on `bbw-stage1-edge` `AlreadyExists` because the live ALB is outside the current stack. ECS/ALB connectivity was repaired after rollback and targets are healthy.
-- The CloudFormation stack is currently `UPDATE_ROLLBACK_COMPLETE` after ECS service/task-definition drift during ALB wiring; the live ALB and service target attachments were repaired explicitly and the CDK edge construct/tests are current. Reconcile skipped ECS service resources before the next full-stack CDK deployment.
+- INF-020's member hostname is approved as `app.bbw.incendiollc.com`; isolated CloudFront distributions are deployed and verified against the ALB origin, including the public member route. The public DNS alias remains owner-managed. INF-023's environment, CDK bootstrap access, and OIDC trust are configured; the existing ALB is now imported into `BbwStage1-stage1`, so subsequent CDK deployments update the ALB instead of attempting to create a duplicate.
+- The CloudFormation stack is `UPDATE_COMPLETE`; imported edge resources report `UPDATE_COMPLETE`, ECS services are stable, and the public/API/management target groups have healthy targets. The remaining INF-023 evidence gap is the deliberate failure/recovery workflow path.
 
 ## 8. Resume instructions
 
