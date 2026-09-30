@@ -103,7 +103,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `INF-021` — Configure AWS WAF protections.
 
 ### Blocked
-- `INF-023` — GitHub `stage1` environment variables and a real workflow run are required to verify deployment and rollback.
+- `INF-023` — Run `36660231983` passed OIDC, quality gates, synth, and CDK bootstrap authorization; deployment is blocked by the existing owner-managed `bbw-stage1-edge` ALB conflicting with CloudFormation ownership.
 
 ## 7. Known risks and assumptions
 
@@ -113,7 +113,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - The $500/month infrastructure target is soft and does not authorize weakening reliability or security.
 - The final security scan is green. The license gate currently reports newly introduced transitive `LGPL-3.0-or-later` (`@img/sharp-libvips-darwin-arm64`) and `CC-BY-4.0` (`caniuse-lite`) licenses from the Next.js shells; legal/owner approval or dependency substitution is required before the license gate can be green again.
 - AWS account isolation is deferred; before production scale-up, a follow-up task must add Organizations accounts and promotion boundaries.
-- INF-020's member hostname is approved as `app.bbw.incendiollc.com`; isolated CloudFront distributions are deployed and verified against the ALB origin, including the public member route. The public DNS alias remains owner-managed. INF-023 is implemented but blocked on GitHub environment configuration and run verification.
+- INF-020's member hostname is approved as `app.bbw.incendiollc.com`; isolated CloudFront distributions are deployed and verified against the ALB origin, including the public member route. The public DNS alias remains owner-managed. INF-023's environment and CDK bootstrap access are configured; run `36660231983` passed all pre-deploy gates but CloudFormation failed on `bbw-stage1-edge` `AlreadyExists` because the live ALB is outside the current stack. ECS/ALB connectivity was repaired after rollback and targets are healthy.
 - The CloudFormation stack is currently `UPDATE_ROLLBACK_COMPLETE` after ECS service/task-definition drift during ALB wiring; the live ALB and service target attachments were repaired explicitly and the CDK edge construct/tests are current. Reconcile skipped ECS service resources before the next full-stack CDK deployment.
 
 ## 8. Resume instructions

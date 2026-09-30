@@ -39,7 +39,7 @@ describe("Stage 1 edge", () => {
       Conditions: [
         {
           Field: "host-header",
-          HostHeaderConfig: { Values: ["bbw.incendiollc.com", "app.bbw.incendiollc.com"] },
+          HostHeaderConfig: { Values: ["app.bbw.incendiollc.com"] },
         },
       ],
     });

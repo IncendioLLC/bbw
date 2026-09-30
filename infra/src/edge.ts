@@ -66,13 +66,17 @@ export class Stage1Edge extends Construct {
       healthCheck: { path: "/", healthyHttpCodes: "200-399" },
     });
     const publicHostname = props.publicHostname ?? "bbw.incendiollc.com";
-    const publicHostnames = [publicHostname, props.publicCloudFrontHostname].filter(
-      (hostname): hostname is string => Boolean(hostname && hostname !== publicHostname),
-    );
     if (publicHostname) {
       this.httpsListener.addAction("PublicHost", {
         priority: 20,
-        conditions: [elbv2.ListenerCondition.hostHeaders([publicHostname, ...publicHostnames])],
+        conditions: [elbv2.ListenerCondition.hostHeaders([publicHostname])],
+        action: elbv2.ListenerAction.forward([publicTargets]),
+      });
+    }
+    if (props.publicCloudFrontHostname && props.publicCloudFrontHostname !== publicHostname) {
+      this.httpsListener.addAction("PublicCloudFrontHost", {
+        priority: 40,
+        conditions: [elbv2.ListenerCondition.hostHeaders([props.publicCloudFrontHostname])],
         action: elbv2.ListenerAction.forward([publicTargets]),
       });
     }
