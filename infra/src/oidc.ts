@@ -40,6 +40,7 @@ export class Stage1GithubActionsRole extends Construct {
               actions: [
                 "cloudformation:*",
                 "ec2:*",
+                "elasticloadbalancing:*",
                 "ecs:*",
                 "ecr:*",
                 "rds:*",
