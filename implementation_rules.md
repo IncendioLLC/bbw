@@ -101,6 +101,7 @@ Git history preserves removed prerequisites. `Depends on` intentionally lists on
 - Failed tests keep the task `in_progress` unless progress is impossible without an external change.
 - Never weaken assertions, authorization, accessibility checks, security controls, or quality thresholds merely to complete a task.
 - If a completed task later causes a regression, create a repair task, link it to the affected acceptance gate, and mark downstream gates blocked when appropriate.
+- When the recorded blocker is resolved, the coordinator must verify the unblock condition, change the task from `blocked` to `ready`, remove or update the blocker evidence, refresh `current_status.md` and `progress.html`, and automatically resume the next eligible ready task without waiting for a new user prompt. The coordinator must continue through the active milestone until its completion boundary or a new concrete blocker is reached.
 
 ## 9. Progress dashboard
 

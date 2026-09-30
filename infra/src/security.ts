@@ -14,6 +14,9 @@ export class Stage1SecurityGroups extends Construct {
     this.alb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), "HTTPS ingress");
     this.alb.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), "HTTP redirect ingress");
     this.ecs = new ec2.SecurityGroup(this, "Ecs", { vpc: subnetVpc, allowAllOutbound: true });
+    this.alb.addEgressRule(this.ecs, ec2.Port.tcp(80), "ALB to HTTP application targets");
+    this.alb.addEgressRule(this.ecs, ec2.Port.tcp(3000), "ALB to API targets");
+    this.ecs.addIngressRule(this.alb, ec2.Port.tcp(80), "ALB to HTTP application targets");
     this.ecs.addIngressRule(this.alb, ec2.Port.tcp(3000), "ALB to application");
     this.database = new ec2.SecurityGroup(this, "Database", { vpc: subnetVpc, allowAllOutbound: false });
     this.database.addIngressRule(this.ecs, ec2.Port.tcp(5432), "ECS to PostgreSQL");

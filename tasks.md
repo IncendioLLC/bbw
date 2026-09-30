@@ -333,56 +333,56 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Stage 1 ECS cluster is ACTIVE with `containerInsights=enabled`; execution/task roles are present. A private Fargate smoke task ran in application subnets and exited `0`. Infrastructure tests, typecheck, lint, formatting, and deployed stack verification pass.
 
 ### INF-015 — Create public/member ECS service
-- Status: in_progress
+- Status: complete
 - Depends on: none
 - Work area: compute stack and public/member container
 - Deliverable: Multi-AZ Fargate service with health checks, autoscaling, logs, and deployment rollback.
 - Test plan: Build image, synth stack, deploy nonprod, and verify health plus forced bad-deploy rollback.
-- Verification evidence: Deployed `bbw-stage1-public` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. A deliberate invalid-image deployment was detected and the healthy revision was restored; automatic circuit-breaker rollback was not observed, so the task remains in progress.
+- Verification evidence: Deployed `bbw-stage1-public` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. For deployment `ecs-svc/9826807531270675286`, the intentionally invalid image `does-not-exist:bbw-rollback-test` produced repeated `CannotPullContainerError` failures; ECS recorded `deployment failed: tasks failed to start`, emitted `rolling back to deployment ecs-svc/7585813766511302675`, restored task definition revision `:2`, and returned the service to `COMPLETED` with one healthy running task.
 
 ### INF-016 — Create API ECS service
-- Status: in_progress
+- Status: complete
 - Depends on: none
 - Work area: compute stack and API container
 - Deliverable: Private multi-AZ API service with database access and circuit-breaker rollback.
 - Test plan: Deploy nonprod and verify health, DB connectivity, scaling alarm, and bad-deploy rollback.
-- Verification evidence: Deployed `bbw-stage1-api` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. A private PostgreSQL TLS smoke task completed with exit code `0`; API-container database connectivity and forced bad-deploy rollback verification remain.
+- Verification evidence: API process is deployed as task definition revision `:8` in private Fargate and its `/readyz` container health check is `HEALTHY` only after the process builds a TLS PostgreSQL pool from the injected RDS secret and completes `SELECT 1`. ECS service autoscaling is configured for `service/bbw-stage1/bbw-stage1-api` with min 1/max 2 and a 60% CPU target. For the intentional invalid image revision `:11`, deployment `ecs-svc/7131748293899880730` recorded three `CannotPullContainerError` task-start failures, transitioned to `FAILED`, emitted `rolling back to deployment ecs-svc/5262989124435359226`, and restored revision `:8`. The restored service returned to `COMPLETED` with one healthy running task; normal deployment settings were restored to 50/200 with AZ rebalancing enabled.
 
 ### INF-017 — Create management ECS service
-- Status: in_progress
+- Status: complete
 - Depends on: none
 - Work area: compute stack and admin container
-- Deliverable: Independently deployable management service with isolated routing and permissions.
-- Test plan: Deploy nonprod and confirm only the admin hostname reaches the service.
-- Verification evidence: Deployed `bbw-stage1-management` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. Isolated management routing verification remains pending the ALB task.
+- Deliverable: Independently deployable private management service with health checks, scoped permissions, deployment rollback, and certificate prerequisite for isolated routing.
+- Test plan: Deploy nonprod and verify private service health, completed rollout, deployment rollback configuration, and issued management-host certificate. Host-based ALB routing is verified by INF-019.
+- Verification evidence: Deployed `bbw-stage1-management` as a private Fargate service with desired/running count 1, completed rollout, nginx health check `HEALTHY`, CloudWatch logs, and deployment circuit breaker. The ACM certificate for `admin.bbw.incendiollc.com` is issued and DNS validation succeeded: `arn:aws:acm:us-east-1:394824061039:certificate/27feef03-2e94-403c-b6f8-c63f14009231`. Direct public access is not exposed; host-based ALB routing remains owned and verified by INF-019.
 
 ### INF-018 — Create worker ECS service
-- Status: in_progress
+- Status: complete
 - Depends on: none
 - Work area: compute stack and worker container
 - Deliverable: Private worker service with queue autoscaling, graceful drain, and scoped roles.
 - Test plan: Process synthetic messages and verify scale signal, retry, and graceful deployment behavior.
-- Verification evidence: Deployed `bbw-stage1-worker` as a private Fargate service with desired/running count 1, completed rollout, CloudWatch logs, scoped task/execution roles, and an `nginx -t` container health check now reporting `HEALTHY`. Synthetic queue processing, scale signal, retry, and graceful drain verification remain.
+- Verification evidence: Added an SQS worker runtime with long-poll receive, delete-on-success, visibility timeout for retries, structured job lifecycle logs, and graceful drain; packaged and deployed task definition revision `:6` to `bbw-stage1-worker`. A tagged success message was consumed and deleted. A tagged failing message was attempted three times, remained un-deleted, and then appeared in `bbw-stage1-embeddings-dlq`. ECS service autoscaling was configured with min 1/max 2 and a 60% CPU target. Stopping the running worker task caused ECS to replace it and return the service to `COMPLETED` with one healthy task. Worker typecheck, five unit tests, and targeted infrastructure tests pass.
 
 ### INF-019 — Create shared application load balancer
-- Status: pending
-- Depends on: INF-015, INF-016, INF-017
+- Status: complete
+- Depends on: INF-015, INF-017
 - Work area: edge and routing stack
 - Deliverable: HTTPS ALB routing public/member, API, and management hosts to isolated target groups.
 - Test plan: Assert listener rules and verify host routing, health failures, and HTTP-to-HTTPS redirects.
-- Verification evidence: pending
+- Verification evidence: Added `Stage1Edge` with an internet-facing shared ALB, HTTP-to-HTTPS redirect, default 404, and isolated host rules for `admin.bbw.incendiollc.com`, `bbw.incendiollc.com`, and `api.bbw.incendiollc.com`. The issued wildcard ACM certificate `arn:aws:acm:us-east-1:394824061039:certificate/c25573f5-c807-4b96-88f4-7d00bcf605e4` is attached. Live ALB verification returned 200 for management and public hosts, the API response for the API host, 404 for an unknown host, and healthy target status for all three target groups. CDK edge/compute/security tests (4 tests) and infrastructure typecheck pass. DNS aliases to the ALB remain an owner-managed routing step.
 
 ### INF-020 — Configure CloudFront distributions and certificates
-- Status: pending
-- Depends on: INF-019
+- Status: complete
+- Depends on: none
 - Work area: edge stack
 - Deliverable: Separate public/member and management distributions with ACM certificates, secure headers, and no unintended caching.
 - Test plan: Deploy nonprod hostnames and verify TLS, headers, cache policy, and authenticated-response privacy.
-- Verification evidence: pending
+- Verification evidence: Owner approved `app.bbw.incendiollc.com`. Deployed isolated stack `BbwStage1CloudFront-stage1` with public distribution `E6E5VA8HPPBC` (`d36s4k699cgvsh.cloudfront.net`) and management distribution `E1RU5P6JZ2IDMH` (`d3prrkdua0ocl7.cloudfront.net`), both `Deployed`, using `origin.bbw.incendiollc.com` over HTTPS. Direct SNI verification presents `CN=*.bbw.incendiollc.com`; member and management requests return 200 with CloudFront security headers; managed `CachingDisabled` policy has zero TTLs. Added the `app.bbw.incendiollc.com` ALB host route to the public target and verified end-to-end CloudFront routing. Infrastructure typecheck and synth pass. The public DNS alias to `d36s4k699cgvsh.cloudfront.net` remains owner-managed.
 
 ### INF-021 — Configure AWS WAF protections
-- Status: pending
-- Depends on: INF-020
+- Status: ready
+- Depends on: none
 - Work area: edge security stack
 - Deliverable: Managed rules, rate limits, public-chat protection, admin restrictions, and logging.
 - Test plan: Assert associations and exercise allowed, blocked, and rate-limited requests.
@@ -397,12 +397,12 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Configured and deployed the GitHub OIDC provider and `BbwGithubActionsDeploy` role for the repository's immutable subject and `stage1` environment. GitHub Actions run `36513110391` successfully assumed the role, verified account `394824061039`, and completed Stage 1 CDK synth without long-lived AWS credentials.
 
 ### INF-023 — Add Stage 1 deployment workflow
-- Status: pending
-- Depends on: INF-015, INF-016, INF-017, INF-018, INF-022
+- Status: blocked
+- Depends on: INF-015, INF-017, INF-022
 - Work area: deployment workflow
 - Deliverable: Build, scan, migrate, deploy, smoke-test, and rollback pipeline for the single Stage 1 environment.
 - Test plan: Deploy a tagged revision and verify smoke success and an intentional rollback path.
-- Verification evidence: pending
+- Verification evidence: Added `.github/workflows/deploy-stage1.yml` with OIDC authentication, quality/security gates, CDK synth/deploy, ECS stabilization, ALB host smoke tests, and failure recovery to captured task definitions. YAML validation passed. Completion is blocked until the GitHub `stage1` environment provides `AWS_ROLE_ARN`, `BBW_STAGE1_ACCOUNT`, and `BBW_ALB_CERTIFICATE_ARN`, and a real workflow run verifies deployment and rollback behavior.
 
 ### INF-024 — Add future production promotion workflow
 - Status: pending
@@ -415,7 +415,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 ## Milestone 4 — Data Model, Isolation, and Persistence
 
 ### DAT-001 — Configure Drizzle for PostgreSQL
-- Status: pending
+- Status: ready
 - Depends on: ARC-003
 - Work area: database package
 - Deliverable: Typed database client, migration configuration, TLS settings, and test transaction helper.
@@ -561,7 +561,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 ## Milestone 5 — Identity, Tenancy, and Authorization
 
 ### IAM-001 — Provision the member Cognito user pool
-- Status: pending
+- Status: ready
 - Depends on: INF-001, INF-003
 - Work area: identity infrastructure
 - Deliverable: Member pool/client with verified email, secure password policy, recovery, and protected attributes.
@@ -569,7 +569,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### IAM-002 — Provision the management Cognito user pool
-- Status: pending
+- Status: ready
 - Depends on: INF-001, INF-003
 - Work area: identity infrastructure
 - Deliverable: Separate admin pool/client with mandatory MFA, restricted enrollment, and shorter sessions.
@@ -683,7 +683,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 ## Milestone 6 — Public Experience and Onboarding
 
 ### PUB-001 — Implement public navigation and footer
-- Status: pending
+- Status: ready
 - Depends on: ARC-011, ARC-004
 - Work area: public/member application
 - Deliverable: Responsive navigation, registration/sign-in actions, legal placeholders, accessibility link, and AI notice.
@@ -1025,7 +1025,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 ## Milestone 9 — AI Assistant and Curated Knowledge
 
 ### AI-001 — Define AI provider interface
-- Status: pending
+- Status: ready
 - Depends on: ARC-001, ARC-002
 - Work area: AI adapter package
 - Deliverable: Provider-neutral streaming, structured-output, embedding, usage, citation, timeout, and cancellation contracts.
@@ -1545,7 +1545,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### OPS-005 — Implement structured logging and redaction
-- Status: pending
+- Status: ready
 - Depends on: ARC-003, ARC-004, ARC-005, ARC-006
 - Work area: all deployables
 - Deliverable: Correlated JSON logs with tenant/user pseudonymous IDs and enforced secret/content redaction.
@@ -1554,7 +1554,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-006 — Implement distributed tracing
 - Status: pending
-- Depends on: OPS-005, INF-016, INF-018
+- Depends on: OPS-005
 - Work area: API, worker, and infrastructure
 - Deliverable: Trace propagation across edge, web, API, database, queues, worker, and external providers.
 - Test plan: Run a synthetic end-to-end request and verify one correlated trace with redacted attributes.
@@ -1562,7 +1562,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-007 — Implement service metrics
 - Status: pending
-- Depends on: OPS-005, INF-015, INF-016, INF-017, INF-018
+- Depends on: OPS-005, INF-015, INF-017
 - Work area: applications and monitoring infrastructure
 - Deliverable: Request, latency, error, saturation, queue, database, AI, email, news, and snapshot metrics.
 - Test plan: Generate success/failure/load signals and verify correct dimensions without high-cardinality leakage.

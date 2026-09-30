@@ -2,10 +2,10 @@
 
 This is the concise handoff source for agents resuming implementation. It records current truth, not a full history. Read it before `tasks.md`, then inspect only the files relevant to the selected task.
 
-**Last updated:** 2026-09-27  
-**Updated through task:** `FND-001` through `FND-014`, `ARC-001` through `ARC-012`, `INF-001` through `INF-014`, `INF-022`  
-**Current phase:** Milestone 3 Stage 1 database, SES, OIDC, and ECS service foundations are deployed; ECS acceptance verification is in progress  
-**Task status:** 0 ready, 166 pending, 4 in progress, 0 blocked, 41 complete
+**Last updated:** 2026-09-29  
+**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-019`, `INF-022`  
+**Current phase:** Milestone 3 CloudFront edge is deployed and verified; workflow acceptance remains blocked on repository prerequisites  
+**Task status:** 7 ready, 158 pending, 0 in progress, 1 blocked, 47 complete
 
 ## 1. Current objective
 
@@ -19,9 +19,9 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 | Repository foundation | Complete | All 14 Milestone 1 tasks are verified: workspace/tooling, quality gates, tests, local services, security and license policy, CI, ADRs, and contributor onboarding. |
 | Public/member application | Scaffolded | `apps/web` has public/authenticated App Router groups and a no-store `/healthz` endpoint; identity integration remains later work. |
 | Management application | Scaffolded | `apps/admin` is independently buildable with management-only navigation and deny-by-default access. |
-| API and worker | API and worker scaffolded | `apps/api` has Fastify health/readiness, request IDs, and graceful shutdown; `apps/worker` has lifecycle, structured logging, synthetic job handling, health, and signal shutdown. |
+| API and worker | Runtime foundations deployed | `apps/api` now opens a TLS PostgreSQL pool from the ECS-injected RDS secret and gates readiness on `SELECT 1`; `apps/worker` now long-polls SQS, deletes successful messages, leaves failures for redelivery/DLQ, and drains in-flight work on shutdown. |
 | Database | Not started | No new Drizzle schema or migrations exist outside the archived demo. |
-| AWS infrastructure | Stage 1 foundation and integrations deployed | `BbwStage1-stage1` is deployed in `us-east-1`; VPC/NAT/endpoints, security groups, encrypted storage, queues/DLQs, EventBridge schedules, RDS, ECS cluster, scoped roles, GitHub OIDC, SES configuration set, SNS destination, and SQS event capture are live. |
+| AWS infrastructure | Stage 1 foundation and integrations deployed | `BbwStage1-stage1` is deployed in `us-east-1`; VPC/NAT/endpoints, security groups, encrypted storage, queues/DLQs, EventBridge schedules, RDS, ECS cluster, scoped roles, management service, shared HTTPS ALB, GitHub OIDC, SES configuration set, SNS destination, and SQS event capture are live. |
 | Authentication and authorization | Not started | Cognito, tenant context, and RLS have not been implemented. |
 | AI and curated RAG | Not started | No provider adapter, Knowledge Card pipeline, retrieval, or evaluation implementation exists. |
 | Product modules | Not started | Profiles, dashboards, company hub, news, ecosystem, snapshots, and management operations remain unimplemented. |
@@ -86,21 +86,24 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `progress.html` embedded data matches all 213 task records.
 - Dashboard JavaScript syntax and no-external-asset checks passed.
 - Live visual browser inspection was unavailable because the browser-control connection could not initialize.
-- All 41 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run.
+- All 47 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing.
 
 ## 6. Active, ready, and blocked work
 
 ### In progress
-None.
-
-### In progress
-- `INF-015` through `INF-018` — service scaffolds are deployed and healthy. Public bad-image detection was verified but automatic rollback was not observed; API private PostgreSQL smoke passed separately, while API-container connectivity, ALB routing, and worker queue behavior remain under verification.
+- None.
 
 ### Ready
-None.
+- `DAT-001` — Configure Drizzle for PostgreSQL.
+- `IAM-001` — Provision the member Cognito user pool.
+- `IAM-002` — Provision the management Cognito user pool.
+- `PUB-001` — Implement public navigation and footer.
+- `AI-001` — Define AI provider interface.
+- `OPS-005` — Implement structured logging and redaction.
+- `INF-021` — Configure AWS WAF protections.
 
 ### Blocked
-None.
+- `INF-023` — GitHub `stage1` environment variables and a real workflow run are required to verify deployment and rollback.
 
 ## 7. Known risks and assumptions
 
@@ -110,7 +113,8 @@ None.
 - The $500/month infrastructure target is soft and does not authorize weakening reliability or security.
 - The final security scan is green. The license gate currently reports newly introduced transitive `LGPL-3.0-or-later` (`@img/sharp-libvips-darwin-arm64`) and `CC-BY-4.0` (`caniuse-lite`) licenses from the Next.js shells; legal/owner approval or dependency substitution is required before the license gate can be green again.
 - AWS account isolation is deferred; before production scale-up, a follow-up task must add Organizations accounts and promotion boundaries.
-- All currently defined Milestone 3 blockers are resolved; downstream Milestone 3 implementation tasks are pending their declared dependencies.
+- INF-020's member hostname is approved as `app.bbw.incendiollc.com`; isolated CloudFront distributions are deployed and verified against the ALB origin, including the public member route. The public DNS alias remains owner-managed. INF-023 is implemented but blocked on GitHub environment configuration and run verification.
+- The CloudFormation stack is currently `UPDATE_ROLLBACK_COMPLETE` after ECS service/task-definition drift during ALB wiring; the live ALB and service target attachments were repaired explicitly and the CDK edge construct/tests are current. Reconcile skipped ECS service resources before the next full-stack CDK deployment.
 
 ## 8. Resume instructions
 
@@ -148,3 +152,8 @@ None.
 - `INF-014` — Verified the ECS cluster, scoped roles, container insights, and private Fargate smoke task.
 - `INF-022` — Deployed immutable-subject GitHub OIDC trust and passed the repository's AWS identity and CDK synth workflow.
 - `INF-013` — Verified SES Easy DKIM, deployed event capture, and captured a tagged simulator delivery event in SQS.
+- `INF-015` — Verified the public/member service health and automatic ECS circuit-breaker rollback: invalid revision `:3` failed to start, ECS rolled back deployment `ecs-svc/9826807531270675286` to `ecs-svc/7585813766511302675`, and revision `:2` returned to `COMPLETED` with one healthy task.
+- `INF-018` — Deployed the SQS worker, consumed a success message, routed a failing message to the DLQ after retries, configured ECS CPU autoscaling, and verified task replacement after a graceful stop.
+- `INF-016` — Verified API TLS database readiness, CPU autoscaling configuration, and automatic ECS circuit-breaker rollback from invalid revision `:11` to healthy revision `:8` after three failed task starts.
+- `INF-017` — Owner DNS validation completed; ACM certificate for `admin.bbw.incendiollc.com` is `ISSUED` and ready for ALB host-isolation implementation.
+- `INF-019` — Deployed and verified the shared HTTPS ALB with isolated public, API, and management host rules; unknown hosts return 404.

@@ -16,6 +16,55 @@ export interface WorkerHealth {
   readonly state: WorkerState;
 }
 
+export interface QueueMessage {
+  readonly body?: string;
+  readonly receiptHandle?: string;
+  readonly messageId?: string;
+}
+
+export interface QueueClient {
+  receive(): Promise<QueueMessage[]>;
+  delete(receiptHandle: string): Promise<void>;
+}
+
+export class SqsWorker {
+  private draining = false;
+  private readonly inFlight = new Set<Promise<void>>();
+
+  public constructor(
+    private readonly client: QueueClient,
+    private readonly runtime = new WorkerRuntime(),
+    private readonly processMessage: (message: QueueMessage) => Promise<void> = async () => undefined,
+  ) {}
+
+  public async runOnce(): Promise<number> {
+    if (this.draining) return 0;
+    const messages = await this.client.receive();
+    for (const message of messages) {
+      if (!message.receiptHandle) continue;
+      let operation!: Promise<void>;
+      operation = this.runtime
+        .run({
+          id: message.messageId ?? "sqs-message",
+          run: async () => {
+            await this.processMessage(message);
+            await this.client.delete(message.receiptHandle!);
+          },
+        })
+        .finally(() => this.inFlight.delete(operation));
+      this.inFlight.add(operation);
+    }
+    await Promise.all([...this.inFlight]);
+    return messages.length;
+  }
+
+  public async drain(): Promise<void> {
+    this.draining = true;
+    await Promise.all([...this.inFlight]);
+    await this.runtime.shutdown();
+  }
+}
+
 const jsonLogger: WorkerLogger = {
   info(event, fields = {}) {
     console.log(JSON.stringify({ level: "info", event, ...fields }));
@@ -107,5 +156,59 @@ export async function runSyntheticJob(shouldFail = false): Promise<void> {
 }
 
 if (process.argv[1]?.endsWith("index.ts") || process.argv[1]?.endsWith("index.js")) {
-  void runSyntheticJob(process.argv.includes("--fail")).catch(() => (process.exitCode = 1));
+  if (process.env.JOB_QUEUE_URL) {
+    void (async () => {
+      const { DeleteMessageCommand, ReceiveMessageCommand, SQSClient } = await import(
+        "@aws-sdk/client-sqs"
+      );
+      const client = new SQSClient({});
+      const worker = new SqsWorker(
+        {
+          async receive() {
+            const result = await client.send(
+              new ReceiveMessageCommand({
+                QueueUrl: process.env.JOB_QUEUE_URL,
+                MaxNumberOfMessages: 10,
+                WaitTimeSeconds: 20,
+                VisibilityTimeout: 60,
+              }),
+            );
+            return (result.Messages ?? []).map((message) => ({
+              ...(message.Body === undefined ? {} : { body: message.Body }),
+              ...(message.MessageId === undefined ? {} : { messageId: message.MessageId }),
+              ...(message.ReceiptHandle === undefined
+                ? {}
+                : { receiptHandle: message.ReceiptHandle }),
+            }));
+          },
+          async delete(receiptHandle) {
+            await client.send(
+              new DeleteMessageCommand({ QueueUrl: process.env.JOB_QUEUE_URL, ReceiptHandle: receiptHandle }),
+            );
+          },
+        },
+        new WorkerRuntime(),
+        async (message) => {
+          if (message.body) {
+            try {
+              const payload = JSON.parse(message.body) as { fail?: boolean };
+              if (payload.fail === true) {
+                throw new Error("requested test failure");
+              }
+            } catch (error) {
+              if (error instanceof SyntaxError) return;
+              throw error;
+            }
+          }
+        },
+      );
+      installShutdownHandlers({ shutdown: () => worker.drain() } as WorkerRuntime);
+      while (true) await worker.runOnce();
+    })().catch((error) => {
+      console.error(JSON.stringify({ level: "error", event: "worker.start_failed", error: String(error) }));
+      process.exitCode = 1;
+    });
+  } else {
+    void runSyntheticJob(process.argv.includes("--fail")).catch(() => (process.exitCode = 1));
+  }
 }

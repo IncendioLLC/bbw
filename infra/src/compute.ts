@@ -2,12 +2,20 @@ import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as ecrAssets from "aws-cdk-lib/aws-ecr-assets";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Construct } from "constructs";
 
 export class Stage1Compute extends Construct {
   public readonly cluster: ecs.Cluster;
   public readonly executionRole: iam.Role;
   public readonly taskRole: iam.Role;
+  public readonly publicService?: ecs.FargateService;
+  public readonly apiService?: ecs.FargateService;
+  public readonly managementService?: ecs.FargateService;
 
   public constructor(
     scope: Construct,
@@ -15,6 +23,8 @@ export class Stage1Compute extends Construct {
     vpc: ec2.Vpc,
     ecsSecurityGroup?: ec2.SecurityGroup,
     servicesEnabled = false,
+    databaseSecret?: secretsmanager.ISecret,
+    workerQueue?: sqs.IQueue,
   ) {
     super(scope, id);
     this.cluster = new ecs.Cluster(this, "Cluster", {
@@ -52,10 +62,10 @@ export class Stage1Compute extends Construct {
       },
     });
     if (servicesEnabled && ecsSecurityGroup) {
-      this.createService("Public", "bbw-stage1-public", ecsSecurityGroup, vpc, true);
-      this.createService("Api", "bbw-stage1-api", ecsSecurityGroup, vpc, true);
-      this.createService("Management", "bbw-stage1-management", ecsSecurityGroup, vpc, true);
-      this.createService("Worker", "bbw-stage1-worker", ecsSecurityGroup, vpc, false);
+      this.publicService = this.createService("Public", "bbw-stage1-public", ecsSecurityGroup, vpc, true);
+      this.apiService = this.createService("Api", "bbw-stage1-api", ecsSecurityGroup, vpc, true, databaseSecret);
+      this.managementService = this.createService("Management", "bbw-stage1-management", ecsSecurityGroup, vpc, true);
+      this.createService("Worker", "bbw-stage1-worker", ecsSecurityGroup, vpc, false, undefined, workerQueue);
     }
   }
 
@@ -65,7 +75,9 @@ export class Stage1Compute extends Construct {
     securityGroup: ec2.SecurityGroup,
     vpc: ec2.Vpc,
     exposesHttp: boolean,
-  ): void {
+    databaseSecret?: secretsmanager.ISecret,
+    workerQueue?: sqs.IQueue,
+  ): ecs.FargateService {
     const logsGroup = new logs.LogGroup(this, `${id}Logs`, {
       logGroupName: `/aws/ecs/${serviceName}`,
       retention: logs.RetentionDays.ONE_WEEK,
@@ -76,16 +88,44 @@ export class Stage1Compute extends Construct {
       executionRole: this.executionRole,
       taskRole: this.taskRole,
     });
+    const runtimeImage = id === "Api" || id === "Worker"
+      ? new ecrAssets.DockerImageAsset(this, `${id}Image`, {
+          directory: path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            `../../apps/${id === "Api" ? "api" : "worker"}`,
+          ),
+        })
+      : undefined;
     const container = taskDefinition.addContainer(`${id}Container`, {
-      image: ecs.ContainerImage.fromRegistry("public.ecr.aws/docker/library/nginx:1.27-alpine"),
+      image: runtimeImage
+        ? ecs.ContainerImage.fromDockerImageAsset(runtimeImage)
+        : ecs.ContainerImage.fromRegistry("public.ecr.aws/docker/library/nginx:1.27-alpine"),
+      ...(id === "Api" ? { environment: { NODE_ENV: "production", PORT: "3000" } } : {}),
+      ...(id === "Worker" && workerQueue ? { environment: { NODE_ENV: "production", JOB_QUEUE_URL: workerQueue.queueUrl } } : {}),
+      ...(id === "Api" && databaseSecret
+        ? { secrets: { DATABASE_SECRET: ecs.Secret.fromSecretsManager(databaseSecret) } }
+        : {}),
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: serviceName, logGroup: logsGroup }),
       essential: true,
       healthCheck: exposesHttp
-        ? { command: ["CMD-SHELL", "wget -q -O - http://localhost:80/ || exit 1"] }
-        : { command: ["CMD-SHELL", "nginx -t || exit 1"] },
+        ? {
+            command: [
+              "CMD-SHELL",
+              `wget -q -O - http://localhost:${id === "Api" ? 3000 : 80}/${id === "Api" ? "readyz" : ""} || exit 1`,
+            ],
+          }
+        : { command: ["CMD-SHELL", "node -e \"process.exit(0)\" || exit 1"] },
     });
-    if (exposesHttp) container.addPortMappings({ containerPort: 80 });
-    new ecs.FargateService(this, `${id}Service`, {
+    if (id === "Worker" && workerQueue) {
+      this.taskRole.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          actions: ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:ChangeMessageVisibility", "sqs:GetQueueAttributes"],
+          resources: [workerQueue.queueArn],
+        }),
+      );
+    }
+    if (exposesHttp) container.addPortMappings({ containerPort: id === "Api" ? 3000 : 80 });
+    const service = new ecs.FargateService(this, `${id}Service`, {
       serviceName,
       cluster: this.cluster as unknown as ecs.ICluster,
       taskDefinition,
@@ -96,5 +136,7 @@ export class Stage1Compute extends Construct {
       enableExecuteCommand: false,
       circuitBreaker: { rollback: true },
     });
+    service.node.addDependency(taskDefinition);
+    return service;
   }
 }

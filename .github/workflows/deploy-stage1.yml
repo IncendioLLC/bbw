@@ -1,0 +1,135 @@
+name: Deploy Stage 1
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: stage1-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, deploy, smoke test, and rollback
+    runs-on: ubuntu-latest
+    environment: stage1
+    timeout-minutes: 45
+    env:
+      AWS_REGION: us-east-1
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      BBW_STAGE1_ACCOUNT: ${{ vars.BBW_STAGE1_ACCOUNT }}
+      BBW_ALB_CERTIFICATE_ARN: ${{ vars.BBW_ALB_CERTIFICATE_ARN }}
+      BBW_ADMIN_HOSTNAME: admin.bbw.incendiollc.com
+      BBW_PUBLIC_HOSTNAME: bbw.incendiollc.com
+      BBW_API_HOSTNAME: api.bbw.incendiollc.com
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: bbw-stage1-deploy-${{ github.run_id }}
+
+      - name: Verify AWS identity and required deployment configuration
+        run: |
+          test -n "$AWS_ROLE_ARN"
+          test -n "$BBW_STAGE1_ACCOUNT"
+          test -n "$BBW_ALB_CERTIFICATE_ARN"
+          test "$(aws sts get-caller-identity --query Account --output text)" = "$BBW_STAGE1_ACCOUNT"
+
+      - name: Build and security scan
+        run: |
+          pnpm security:scan
+          pnpm typecheck
+          pnpm test
+          pnpm build
+
+      - name: Synthesize Stage 1 infrastructure
+        env:
+          BBW_CDK_ENV: stage1
+          BBW_ENABLE_STAGE1_SERVICES: "true"
+          BBW_ENABLE_SES: "false"
+          BBW_ENABLE_GITHUB_OIDC: "false"
+        run: pnpm --filter @bbw/infra exec cdk synth BbwStage1-stage1 --app 'npx tsx src/index.ts' --path-metadata false --asset-metadata false >/tmp/bbw-stage1.template.json
+
+      - name: Capture current ECS revisions for rollback
+        id: previous
+        run: |
+          cluster=bbw-stage1
+          for service in public api management worker; do
+            revision=$(aws ecs describe-services --cluster "$cluster" --services "bbw-stage1-$service" --query 'services[0].taskDefinition' --output text)
+            echo "${service}_task_definition=$revision" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Deploy Stage 1 infrastructure
+        env:
+          BBW_CDK_ENV: stage1
+          BBW_ENABLE_STAGE1_SERVICES: "true"
+          BBW_ENABLE_SES: "false"
+          BBW_ENABLE_GITHUB_OIDC: "false"
+        run: pnpm --filter @bbw/infra exec cdk deploy BbwStage1-stage1 --app 'npx tsx src/index.ts' --require-approval never
+
+      - name: Wait for ECS services to stabilize
+        run: |
+          aws ecs wait services-stable --cluster bbw-stage1 \
+            --services bbw-stage1-public bbw-stage1-api bbw-stage1-management bbw-stage1-worker
+
+      - name: Smoke test management host isolation
+        run: |
+          alb_dns=$(aws elbv2 describe-load-balancers --names bbw-stage1-edge --query 'LoadBalancers[0].DNSName' --output text)
+          test -n "$alb_dns"
+          curl --fail --silent --show-error --max-time 20 \
+            --resolve "$BBW_ADMIN_HOSTNAME:443:$alb_dns" \
+            "https://$BBW_ADMIN_HOSTNAME/" >/dev/null
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 20 \
+            --resolve "unknown.bbw.incendiollc.com:443:$alb_dns" \
+            https://unknown.bbw.incendiollc.com/)
+          test "$status" = "404"
+
+      - name: Mark deployment successful
+        run: echo "Stage 1 deployment and smoke tests passed"
+
+      # ECS deployment circuit breakers handle failed task revisions. This
+      # explicit restore also covers a failed CloudFormation update or smoke
+      # test after the services were changed.
+      - name: Restore previous ECS revisions after failure
+        if: failure() && steps.previous.outcome == 'success'
+        env:
+          PUBLIC_TASK_DEFINITION: ${{ steps.previous.outputs.public_task_definition }}
+          API_TASK_DEFINITION: ${{ steps.previous.outputs.api_task_definition }}
+          MANAGEMENT_TASK_DEFINITION: ${{ steps.previous.outputs.management_task_definition }}
+          WORKER_TASK_DEFINITION: ${{ steps.previous.outputs.worker_task_definition }}
+        run: |
+          set -euo pipefail
+          for service in public api management worker; do
+            variable=$(echo "${service}_task_definition" | tr '[:lower:]' '[:upper:]')
+            task_definition="${!variable}"
+            test -n "$task_definition"
+            aws ecs update-service --cluster bbw-stage1 --service "bbw-stage1-$service" \
+              --task-definition "$task_definition" --force-new-deployment >/dev/null
+          done
+          aws ecs wait services-stable --cluster bbw-stage1 \
+            --services bbw-stage1-public bbw-stage1-api bbw-stage1-management bbw-stage1-worker

@@ -8,9 +8,12 @@ allowBuilds:
   sharp: true
 
 catalog:
+  '@aws-sdk/client-sqs': ^3.1142.0
+  '@types/pg': ^8.23.1
   aws-cdk: 2.1143.0
   aws-cdk-lib: 2.271.0
   constructs: 10.8.1
+  pg: ^8.23.0
   tsx: 4.20.6
 
 catalogMode: strict
