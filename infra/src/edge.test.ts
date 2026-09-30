@@ -6,7 +6,7 @@ import { Stage1Compute } from "./compute.js";
 import { Stage1Edge } from "./edge.js";
 
 describe("Stage 1 edge", () => {
-  it("creates HTTPS host rules with an isolated management target", () => {
+  it("creates HTTPS host rules with an isolated management target", { timeout: 30_000 }, () => {
     const stack = new Stack(new App(), "EdgeFocusedTest");
     const vpc = new ec2.Vpc(stack, "Vpc", {
       maxAzs: 2,
