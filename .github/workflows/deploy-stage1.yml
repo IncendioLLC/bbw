@@ -26,7 +26,7 @@ jobs:
       BBW_ALB_CERTIFICATE_ARN: ${{ vars.BBW_ALB_CERTIFICATE_ARN }}
       BBW_SES_DOMAIN: ${{ vars.BBW_SES_DOMAIN }}
       BBW_GITHUB_REPOSITORY: IncendioLLC/bbw
-      BBW_GITHUB_IMMUTABLE_SUBJECT: repo:IncendioLLC/bbw:environment:stage1
+      BBW_GITHUB_IMMUTABLE_SUBJECT: repo:IncendioLLC@335236855/bbw@1393936250
       BBW_ADMIN_HOSTNAME: admin.bbw.incendiollc.com
       BBW_PUBLIC_HOSTNAME: bbw.incendiollc.com
       BBW_API_HOSTNAME: api.bbw.incendiollc.com
@@ -97,7 +97,7 @@ jobs:
           BBW_ENABLE_GITHUB_OIDC: "true"
           BBW_SES_DOMAIN: ${{ vars.BBW_SES_DOMAIN }}
           BBW_GITHUB_REPOSITORY: IncendioLLC/bbw
-          BBW_GITHUB_IMMUTABLE_SUBJECT: repo:IncendioLLC/bbw:environment:stage1
+          BBW_GITHUB_IMMUTABLE_SUBJECT: repo:IncendioLLC@335236855/bbw@1393936250
         run: pnpm --filter @bbw/infra exec cdk deploy BbwStage1-stage1 --app 'npx tsx src/index.ts' --require-approval never
 
       - name: Wait for ECS services to stabilize
