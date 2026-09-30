@@ -3,9 +3,9 @@
 This is the concise handoff source for agents resuming implementation. It records current truth, not a full history. Read it before `tasks.md`, then inspect only the files relevant to the selected task.
 
 **Last updated:** 2026-09-30  
-**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-022`, `INF-021`  
-**Current phase:** Milestone 3 edge security and normal deployment workflow are deployed and verified; only intentional workflow rollback verification remains  
-**Task status:** 6 ready, 158 pending, 0 in progress, 1 blocked, 48 complete
+**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-023`, `INF-021`  
+**Current phase:** Milestone 3 edge security and deployment workflow are deployed and verified; the future promotion workflow is ready  
+**Task status:** 7 ready, 157 pending, 0 in progress, 0 blocked, 49 complete
 
 ## 1. Current objective
 
@@ -87,7 +87,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `progress.html` embedded data matches all 213 task records.
 - Dashboard JavaScript syntax and no-external-asset checks passed.
 - Live visual browser inspection was unavailable because the browser-control connection could not initialize.
-- All 48 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing.
+- All 49 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing; INF-023 verified the normal deployment workflow and its controlled invalid-image restore path in run `36761163607`.
 - INF-021 adds the WAF-specific evidence: both scopes are deployed, attached, logged, and exercised with allowed and blocked live requests.
 
 ## 6. Active, ready, and blocked work
@@ -102,9 +102,10 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `PUB-001` — Implement public navigation and footer.
 - `AI-001` — Define AI provider interface.
 - `OPS-005` — Implement structured logging and redaction.
+- `INF-024` — Add future production promotion workflow.
 
 ### Blocked
-- `INF-023` — The ALB ownership conflict is resolved and normal workflow run `36667867705` passed. An intentionally failed workflow run still needs to verify the complete recovery path, including the guarded restore step.
+- None.
 
 ## 7. Known risks and assumptions
 
@@ -115,7 +116,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - The final security scan is green. The license gate currently reports newly introduced transitive `LGPL-3.0-or-later` (`@img/sharp-libvips-darwin-arm64`) and `CC-BY-4.0` (`caniuse-lite`) licenses from the Next.js shells; legal/owner approval or dependency substitution is required before the license gate can be green again.
 - AWS account isolation is deferred; before production scale-up, a follow-up task must add Organizations accounts and promotion boundaries.
 - INF-020's member hostname is approved as `app.bbw.incendiollc.com`; isolated CloudFront distributions are deployed and verified against the ALB origin, including the public member route. The public DNS alias remains owner-managed. INF-023's environment, CDK bootstrap access, and OIDC trust are configured; the existing ALB is now imported into `BbwStage1-stage1`, so subsequent CDK deployments update the ALB instead of attempting to create a duplicate.
-- The CloudFormation stack is `UPDATE_COMPLETE`; imported edge resources report `UPDATE_COMPLETE`, ECS services are stable, and the public/API/management target groups have healthy targets. The remaining INF-023 evidence gap is the deliberate failure/recovery workflow path.
+- The CloudFormation stack is `UPDATE_ROLLBACK_COMPLETE` immediately after the controlled invalid-image probe and the guarded restore step; imported edge resources report `UPDATE_COMPLETE`, ECS services are stable on valid task definitions, and the public/API/management target groups have healthy targets. The probe demonstrated the explicit workflow restore path; ECS circuit-breaker timing remains an operational observation for later tuning.
 
 ## 8. Resume instructions
 

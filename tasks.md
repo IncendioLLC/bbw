@@ -2,7 +2,7 @@
 
 This is the authoritative execution graph for the Stage 1 platform. Dependencies listed here are unresolved prerequisites only; completed prerequisites are removed according to `implementation_rules.md`. Read `current_status.md` first for the latest concise implementation handoff.
 
-**Status summary:** 6 ready, 158 pending, 0 in progress, 1 blocked, 48 complete.
+**Status summary:** 7 ready, 157 pending, 0 in progress, 0 blocked, 49 complete.
 **Last synchronized:** 2026-09-30
 **Scope:** Engineering implementation and technical verification. Business-owned brand, legal, editorial, and launch-content approval are excluded.
 
@@ -397,16 +397,16 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Configured and deployed the GitHub OIDC provider and `BbwGithubActionsDeploy` role for the repository's immutable subject and `stage1` environment. GitHub Actions run `36513110391` successfully assumed the role, verified account `394824061039`, and completed Stage 1 CDK synth without long-lived AWS credentials.
 
 ### INF-023 — Add Stage 1 deployment workflow
-- Status: blocked
+- Status: complete
 - Depends on: none
 - Work area: deployment workflow
 - Deliverable: Build, scan, migrate, deploy, smoke-test, and rollback pipeline for the single Stage 1 environment.
 - Test plan: Deploy a tagged revision and verify smoke success and an intentional rollback path.
-- Verification evidence: Imported the existing `bbw-stage1-edge` ALB, listeners, target groups, and host rules into `BbwStage1-stage1` through a CloudFormation import change set; all ten imported resources report `UPDATE_COMPLETE`, and public/API/management target groups are healthy. The deployment workflow now preserves SES/OIDC resources, includes ALB inspection permission, resolves the ALB hostname to an IP for curl, and guards rollback when ECS has retired the captured task definition. GitHub Actions run `36667867705` passed OIDC, quality/security gates, CDK synth/deploy, ECS stabilization, and ALB host-isolation smoke tests. The remaining verification blocker is an intentionally failed workflow deployment to exercise the complete recovery path; normal deployment and the CloudFormation ownership conflict are resolved.
+- Verification evidence: Imported the existing `bbw-stage1-edge` ALB, listeners, target groups, and host rules into `BbwStage1-stage1` through a CloudFormation import change set; all ten imported resources report `UPDATE_COMPLETE`, and public/API/management target groups are healthy. The deployment workflow now preserves SES/OIDC resources, includes ALB inspection permission, resolves the ALB hostname to an IP for curl, and guards rollback when ECS has retired the captured task definition. GitHub Actions run `36760481219` passed OIDC, quality/security gates, CDK synth/deploy, ECS stabilization, and ALB host-isolation smoke tests. Controlled invalid-image probe run `36761163607` injected `public.ecr.aws/bbw/definitely-invalid:rollback-probe`, produced repeated ECS image-pull failures, failed the deploy as expected, and completed the guarded restore step; all four ECS services returned to `COMPLETED` on their prior valid task definitions. CloudFormation cancellation was required because the ECS circuit breaker did not finish within the bounded probe window; this is recorded as an operational observation, not an unverified success claim.
 
 ### INF-024 — Add future production promotion workflow
-- Status: pending
-- Depends on: INF-023
+- Status: ready
+- Depends on: none
 - Work area: deployment workflow
 - Deliverable: Approval-gated artifact promotion contract retained for later multi-account production isolation, with Stage 1 dry-run support.
 - Test plan: Dry-run promotion, verify environment protection, provenance, smoke tests, and rollback command.
