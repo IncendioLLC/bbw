@@ -10,6 +10,7 @@ export interface Stage1CloudFrontProps {
   readonly managementCertificateArn: string;
   readonly publicHostname?: string;
   readonly managementHostname?: string;
+  readonly webAclArn?: string;
 }
 
 /**
@@ -36,6 +37,7 @@ export class Stage1CloudFront extends Construct {
       enabled: true,
       domainNames: [props.publicHostname ?? "app.bbw.incendiollc.com"],
       certificate: acm.Certificate.fromCertificateArn(this, "PublicCertificate", props.publicCertificateArn),
+      ...(props.webAclArn ? { webAclId: props.webAclArn } : {}),
       defaultBehavior: {
         origin: publicOrigin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -50,6 +52,7 @@ export class Stage1CloudFront extends Construct {
       enabled: true,
       domainNames: [props.managementHostname ?? "admin.bbw.incendiollc.com"],
       certificate: acm.Certificate.fromCertificateArn(this, "ManagementCertificate", props.managementCertificateArn),
+      ...(props.webAclArn ? { webAclId: props.webAclArn } : {}),
       defaultBehavior: {
         origin: publicOrigin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,

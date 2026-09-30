@@ -11,6 +11,7 @@ import { Stage1Email } from "./email.js";
 import { Stage1GithubActionsRole } from "./oidc.js";
 import { Stage1Edge } from "./edge.js";
 import { Stage1CloudFront } from "./cloudfront.js";
+import { Stage1Waf } from "./waf.js";
 
 export type StageEnvironment = "stage1";
 
@@ -90,6 +91,10 @@ export class Stage1FoundationStack extends cdk.Stack {
       const edge = new Stage1Edge(this, "Edge", edgeProps);
       const publicCloudFrontCertificateArn = process.env.BBW_CLOUDFRONT_PUBLIC_CERTIFICATE_ARN;
       const managementCloudFrontCertificateArn = process.env.BBW_CLOUDFRONT_MANAGEMENT_CERTIFICATE_ARN;
+      const waf = new Stage1Waf(this, "Waf", {
+        albArn: edge.loadBalancer.loadBalancerArn,
+        createCloudFrontWebAcl: Boolean(publicCloudFrontCertificateArn && managementCloudFrontCertificateArn),
+      });
       if (publicCloudFrontCertificateArn && managementCloudFrontCertificateArn) {
         new Stage1CloudFront(this, "CloudFront", {
           originDomainName: process.env.BBW_CLOUDFRONT_ORIGIN_DOMAIN ?? edge.loadBalancer.loadBalancerDnsName,
@@ -97,6 +102,7 @@ export class Stage1FoundationStack extends cdk.Stack {
           managementCertificateArn: managementCloudFrontCertificateArn,
           publicHostname: process.env.BBW_PUBLIC_CLOUDFRONT_HOSTNAME ?? "app.bbw.incendiollc.com",
           managementHostname: process.env.BBW_MANAGEMENT_CLOUDFRONT_HOSTNAME ?? "admin.bbw.incendiollc.com",
+          ...(waf.cloudFrontWebAcl ? { webAclArn: waf.cloudFrontWebAcl.attrArn } : {}),
         });
       }
     }
@@ -148,12 +154,14 @@ export class Stage1CloudFrontStack extends cdk.Stack {
         "BBW_CLOUDFRONT_ORIGIN_DOMAIN, BBW_CLOUDFRONT_PUBLIC_CERTIFICATE_ARN, and BBW_CLOUDFRONT_MANAGEMENT_CERTIFICATE_ARN are required for CloudFront-only deployment",
       );
     }
+    const waf = new Stage1Waf(this, "Waf", { createCloudFrontWebAcl: true });
     new Stage1CloudFront(this, "CloudFront", {
       originDomainName,
       publicCertificateArn,
       managementCertificateArn,
       publicHostname: process.env.BBW_PUBLIC_CLOUDFRONT_HOSTNAME ?? "app.bbw.incendiollc.com",
       managementHostname: process.env.BBW_MANAGEMENT_CLOUDFRONT_HOSTNAME ?? "admin.bbw.incendiollc.com",
+      ...(waf.cloudFrontWebAcl ? { webAclArn: waf.cloudFrontWebAcl.attrArn } : {}),
     });
   }
 }
