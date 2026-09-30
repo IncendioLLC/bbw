@@ -405,7 +405,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Imported the existing `bbw-stage1-edge` ALB, listeners, target groups, and host rules into `BbwStage1-stage1` through a CloudFormation import change set; all ten imported resources report `UPDATE_COMPLETE`, and public/API/management target groups are healthy. The deployment workflow now preserves SES/OIDC resources, includes ALB inspection permission, resolves the ALB hostname to an IP for curl, and guards rollback when ECS has retired the captured task definition. GitHub Actions run `36760481219` passed OIDC, quality/security gates, CDK synth/deploy, ECS stabilization, and ALB host-isolation smoke tests. Controlled invalid-image probe run `36761163607` injected `public.ecr.aws/bbw/definitely-invalid:rollback-probe`, produced repeated ECS image-pull failures, failed the deploy as expected, and completed the guarded restore step; all four ECS services returned to `COMPLETED` on their prior valid task definitions. CloudFormation cancellation was required because the ECS circuit breaker did not finish within the bounded probe window; this is recorded as an operational observation, not an unverified success claim.
 
 ### INF-024 — Add future production promotion workflow
-- Status: ready
+- Status: in_progress
 - Depends on: none
 - Work area: deployment workflow
 - Deliverable: Approval-gated artifact promotion contract retained for later multi-account production isolation, with Stage 1 dry-run support.

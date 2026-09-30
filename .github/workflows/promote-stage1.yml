@@ -1,0 +1,113 @@
+name: Promote Stage 1 artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Successful deploy-stage1 workflow run that produced the artifact"
+        required: true
+        type: string
+      artifact_sha:
+        description: "Immutable 40-character commit SHA to promote"
+        required: true
+        type: string
+      dry_run:
+        description: "Validate provenance, smoke checks, and rollback instructions without promoting"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+
+concurrency:
+  group: stage1-promotion
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate artifact and Stage 1 dry run
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AWS_REGION: us-east-1
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      BBW_STAGE1_ACCOUNT: ${{ vars.BBW_STAGE1_ACCOUNT }}
+      BBW_ADMIN_HOSTNAME: admin.bbw.incendiollc.com
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      ARTIFACT_SHA: ${{ inputs.artifact_sha }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - name: Validate immutable input format
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARTIFACT_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Verify source workflow provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_json=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")
+          test "$(jq -r '.path' <<<"$run_json")" = ".github/workflows/deploy-stage1.yml"
+          test "$(jq -r '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -r '.head_sha' <<<"$run_json")" = "$ARTIFACT_SHA"
+          echo "Verified successful deploy-stage1 run ${SOURCE_RUN_ID} for ${ARTIFACT_SHA}."
+
+      - name: Check out immutable artifact
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.artifact_sha }}
+          fetch-depth: 1
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: bbw-stage1-promotion-${{ github.run_id }}
+
+      - name: Verify Stage 1 identity and service stability
+        run: |
+          set -euo pipefail
+          test -n "$AWS_ROLE_ARN"
+          test "$(aws sts get-caller-identity --query Account --output text)" = "$BBW_STAGE1_ACCOUNT"
+          aws ecs wait services-stable --cluster bbw-stage1 \
+            --services bbw-stage1-public bbw-stage1-api bbw-stage1-management bbw-stage1-worker
+
+      - name: Run Stage 1 smoke checks and print rollback command
+        run: |
+          set -euo pipefail
+          alb_dns=$(aws elbv2 describe-load-balancers --names bbw-stage1-edge --query 'LoadBalancers[0].DNSName' --output text)
+          alb_ip=$(getent ahostsv4 "$alb_dns" | awk 'NR == 1 { print $1 }')
+          test -n "$alb_ip"
+          curl --fail --silent --show-error --max-time 20 \
+            --resolve "$BBW_ADMIN_HOSTNAME:443:$alb_ip" \
+            "https://$BBW_ADMIN_HOSTNAME/" >/dev/null
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 20 \
+            --resolve "unknown.bbw.incendiollc.com:443:$alb_ip" \
+            https://unknown.bbw.incendiollc.com/)
+          test "$status" = "404"
+          for service in public api management worker; do
+            task=$(aws ecs describe-services --cluster bbw-stage1 --services "bbw-stage1-$service" \
+              --query 'services[0].taskDefinition' --output text)
+            echo "Rollback command for $service: aws ecs update-service --cluster bbw-stage1 --service bbw-stage1-$service --task-definition $task --force-new-deployment"
+          done
+          echo "Stage 1 promotion dry run passed for $ARTIFACT_SHA (dry_run=$DRY_RUN)."
+
+  promote:
+    name: Approval-gated promotion contract
+    needs: validate
+    if: ${{ inputs.dry_run == false }}
+    runs-on: ubuntu-latest
+    environment:
+      name: stage1-promotion
+    steps:
+      - name: Fail closed until production target is provisioned
+        run: |
+          echo "The stage1-promotion approval gate was passed."
+          echo "A production account and promotion target must be provisioned before a real promotion is enabled."
+          exit 1
