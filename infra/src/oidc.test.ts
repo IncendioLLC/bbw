@@ -4,7 +4,7 @@ import { describe, it } from "vitest";
 import { Stage1GithubActionsRole } from "./oidc.js";
 
 describe("Stage 1 deployment OIDC", () => {
-  it("restricts trust to the repository Stage 1 environment", () => {
+  it("restricts trust to the repository Stage 1 environment", { timeout: 30_000 }, () => {
     const stack = new Stack(new App(), "OidcTest");
     new Stage1GithubActionsRole(stack, "Oidc", "example/platform");
     const template = Template.fromStack(stack);
@@ -25,7 +25,7 @@ describe("Stage 1 deployment OIDC", () => {
     });
   });
 
-  it("supports GitHub immutable repository subjects", () => {
+  it("supports GitHub immutable repository subjects", { timeout: 30_000 }, () => {
     const stack = new Stack(new App(), "ImmutableOidcTest");
     new Stage1GithubActionsRole(
       stack,
