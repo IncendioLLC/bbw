@@ -62,6 +62,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - Task orchestration: `turbo.json` defines dependency-aware build, lint, typecheck, unit, integration, e2e, and persistent dev pipelines; root scripts invoke the relevant gates.
 - Local services: `scripts/local-services.sh` controls loopback-only PostgreSQL/pgvector, Mailpit, and LocalStack from `compose.yaml`; `docs/local-development-services.md` documents endpoints and troubleshooting.
 - Pull requests: `.github/workflows/quality.yml` runs frozen install, security and license gates, formatting, lint, typecheck, unit tests, build, and five-project Playwright smoke coverage.
+- Delivery promotion: `.github/workflows/promote-stage1.yml` validates immutable artifact provenance, runs Stage 1 dry-run smoke checks, prints ECS rollback commands, and reserves real promotion behind the protected `stage1-promotion` environment until a production target exists; `docs/stage1-promotion.md` documents the contract.
 - Contributor entrypoint: `CONTRIBUTING.md` documents clean setup, the first test, services, the current migration boundary, all verification gates, repository ownership, and troubleshooting.
 - Shared primitives: `@bbw/shared` exports branded identifiers, timestamps, pagination, money, actor, and tenant context parsers with compile-time brand separation.
 - UI tokens: `@bbw/ui` exports accessible semantic colors and extensible typography, spacing, radius, elevation, breakpoint, and motion tokens with a local preview.
