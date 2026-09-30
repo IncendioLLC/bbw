@@ -381,12 +381,12 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Owner approved `app.bbw.incendiollc.com`. Deployed isolated stack `BbwStage1CloudFront-stage1` with public distribution `E6E5VA8HPPBC` (`d36s4k699cgvsh.cloudfront.net`) and management distribution `E1RU5P6JZ2IDMH` (`d3prrkdua0ocl7.cloudfront.net`), both `Deployed`, using `origin.bbw.incendiollc.com` over HTTPS. Direct SNI verification presents `CN=*.bbw.incendiollc.com`; member and management requests return 200 with CloudFront security headers; managed `CachingDisabled` policy has zero TTLs. Added the `app.bbw.incendiollc.com` ALB host route to the public target and verified end-to-end CloudFront routing. Infrastructure typecheck and synth pass. The public DNS alias to `d36s4k699cgvsh.cloudfront.net` remains owner-managed.
 
 ### INF-021 — Configure AWS WAF protections
-- Status: ready
+- Status: complete
 - Depends on: none
 - Work area: edge security stack
 - Deliverable: Managed rules, rate limits, public-chat protection, admin restrictions, and logging.
 - Test plan: Assert associations and exercise allowed, blocked, and rate-limited requests.
-- Verification evidence: pending
+- Verification evidence: Added `infra/src/waf.ts` with separate regional and CloudFront-scope Web ACLs, AWS managed Common/KnownBadInputs rules, general IP rate limiting, `/api/chat` rate limiting, public-host admin-path blocking, retained CloudWatch WAF logs, and ALB association. Deployed regional ACL `bbw-stage1-regional-waf` and CloudFront ACL `bbw-stage1-cloudfront-waf`; the regional ACL is associated with `bbw-stage1-edge`, and both CloudFront distributions reference the CloudFront ACL. Live ALB checks returned 200 for the allowed public root, 403 for public `/admin` and an XSS-style query, and 403 for subsequent `/api/chat` requests after the rate-limit threshold propagated. Focused WAF/CloudFront tests (3), full infrastructure tests excluding generated `cdk.out`, typecheck, and both Stage 1 stack deployments passed.
 
 ### INF-022 — Configure GitHub Actions OIDC deployment roles
 - Status: complete
@@ -1676,7 +1676,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### QA-008 — Run dynamic security tests
 - Status: pending
-- Depends on: QA-007, INF-021
+- Depends on: QA-007
 - Work area: deployed nonprod security testing
 - Deliverable: Automated checks for headers, TLS, injection, CSRF, SSRF, XSS, open redirects, rate limits, and access control.
 - Test plan: Run approved scanner plus targeted cases; require no unresolved high/critical findings.

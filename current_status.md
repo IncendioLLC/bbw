@@ -3,9 +3,9 @@
 This is the concise handoff source for agents resuming implementation. It records current truth, not a full history. Read it before `tasks.md`, then inspect only the files relevant to the selected task.
 
 **Last updated:** 2026-09-30  
-**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-019`, `INF-022`  
-**Current phase:** Milestone 3 edge and normal deployment workflow are deployed and verified; only intentional workflow rollback verification remains  
-**Task status:** 7 ready, 158 pending, 0 in progress, 1 blocked, 47 complete
+**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-022`, `INF-021`  
+**Current phase:** Milestone 3 edge security and normal deployment workflow are deployed and verified; only intentional workflow rollback verification remains  
+**Task status:** 6 ready, 158 pending, 0 in progress, 1 blocked, 48 complete
 
 ## 1. Current objective
 
@@ -22,6 +22,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 | API and worker | Runtime foundations deployed | `apps/api` now opens a TLS PostgreSQL pool from the ECS-injected RDS secret and gates readiness on `SELECT 1`; `apps/worker` now long-polls SQS, deletes successful messages, leaves failures for redelivery/DLQ, and drains in-flight work on shutdown. |
 | Database | Not started | No new Drizzle schema or migrations exist outside the archived demo. |
 | AWS infrastructure | Stage 1 foundation and integrations deployed | `BbwStage1-stage1` is deployed in `us-east-1`; VPC/NAT/endpoints, security groups, encrypted storage, queues/DLQs, EventBridge schedules, RDS, ECS cluster, scoped roles, management service, shared HTTPS ALB, GitHub OIDC, SES configuration set, SNS destination, and SQS event capture are live. |
+| Edge security | WAF deployed | Regional and CloudFront-scope Web ACLs protect the ALB and both CloudFront distributions with managed rules, rate limits, public admin-path blocking, and retained CloudWatch logging. |
 | Authentication and authorization | Not started | Cognito, tenant context, and RLS have not been implemented. |
 | AI and curated RAG | Not started | No provider adapter, Knowledge Card pipeline, retrieval, or evaluation implementation exists. |
 | Product modules | Not started | Profiles, dashboards, company hub, news, ecosystem, snapshots, and management operations remain unimplemented. |
@@ -86,7 +87,8 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `progress.html` embedded data matches all 213 task records.
 - Dashboard JavaScript syntax and no-external-asset checks passed.
 - Live visual browser inspection was unavailable because the browser-control connection could not initialize.
-- All 47 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing.
+- All 48 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing.
+- INF-021 adds the WAF-specific evidence: both scopes are deployed, attached, logged, and exercised with allowed and blocked live requests.
 
 ## 6. Active, ready, and blocked work
 
@@ -100,7 +102,6 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `PUB-001` — Implement public navigation and footer.
 - `AI-001` — Define AI provider interface.
 - `OPS-005` — Implement structured logging and redaction.
-- `INF-021` — Configure AWS WAF protections.
 
 ### Blocked
 - `INF-023` — The ALB ownership conflict is resolved and normal workflow run `36667867705` passed. An intentionally failed workflow run still needs to verify the complete recovery path, including the guarded restore step.
@@ -157,3 +158,4 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `INF-016` — Verified API TLS database readiness, CPU autoscaling configuration, and automatic ECS circuit-breaker rollback from invalid revision `:11` to healthy revision `:8` after three failed task starts.
 - `INF-017` — Owner DNS validation completed; ACM certificate for `admin.bbw.incendiollc.com` is `ISSUED` and ready for ALB host-isolation implementation.
 - `INF-019` — Deployed and verified the shared HTTPS ALB with isolated public, API, and management host rules; unknown hosts return 404.
+- `INF-021` — Deployed regional and CloudFront WAF protections with managed rules, public-chat/general rate limits, public admin-path blocking, retained logging, and live 200/403 request verification.
