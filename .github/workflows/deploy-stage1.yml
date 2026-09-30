@@ -24,6 +24,9 @@ jobs:
       AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
       BBW_STAGE1_ACCOUNT: ${{ vars.BBW_STAGE1_ACCOUNT }}
       BBW_ALB_CERTIFICATE_ARN: ${{ vars.BBW_ALB_CERTIFICATE_ARN }}
+      BBW_SES_DOMAIN: ${{ vars.BBW_SES_DOMAIN }}
+      BBW_GITHUB_REPOSITORY: IncendioLLC/bbw
+      BBW_GITHUB_IMMUTABLE_SUBJECT: repo:IncendioLLC/bbw:environment:stage1
       BBW_ADMIN_HOSTNAME: admin.bbw.incendiollc.com
       BBW_PUBLIC_HOSTNAME: bbw.incendiollc.com
       BBW_API_HOSTNAME: api.bbw.incendiollc.com
@@ -71,8 +74,9 @@ jobs:
         env:
           BBW_CDK_ENV: stage1
           BBW_ENABLE_STAGE1_SERVICES: "true"
-          BBW_ENABLE_SES: "false"
-          BBW_ENABLE_GITHUB_OIDC: "false"
+          BBW_ENABLE_SES: "true"
+          BBW_SES_USE_EXISTING_IDENTITY: "true"
+          BBW_ENABLE_GITHUB_OIDC: "true"
         run: pnpm --filter @bbw/infra exec cdk synth BbwStage1-stage1 --app 'npx tsx src/index.ts' --path-metadata false --asset-metadata false >/tmp/bbw-stage1.template.json
 
       - name: Capture current ECS revisions for rollback
@@ -88,8 +92,12 @@ jobs:
         env:
           BBW_CDK_ENV: stage1
           BBW_ENABLE_STAGE1_SERVICES: "true"
-          BBW_ENABLE_SES: "false"
-          BBW_ENABLE_GITHUB_OIDC: "false"
+          BBW_ENABLE_SES: "true"
+          BBW_SES_USE_EXISTING_IDENTITY: "true"
+          BBW_ENABLE_GITHUB_OIDC: "true"
+          BBW_SES_DOMAIN: ${{ vars.BBW_SES_DOMAIN }}
+          BBW_GITHUB_REPOSITORY: IncendioLLC/bbw
+          BBW_GITHUB_IMMUTABLE_SUBJECT: repo:IncendioLLC/bbw:environment:stage1
         run: pnpm --filter @bbw/infra exec cdk deploy BbwStage1-stage1 --app 'npx tsx src/index.ts' --require-approval never
 
       - name: Wait for ECS services to stabilize
