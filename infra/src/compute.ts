@@ -96,8 +96,11 @@ export class Stage1Compute extends Construct {
           ),
         })
       : undefined;
+    const forcedImage = process.env.BBW_INVALID_IMAGE;
     const container = taskDefinition.addContainer(`${id}Container`, {
-      image: runtimeImage
+      image: forcedImage
+        ? ecs.ContainerImage.fromRegistry(forcedImage)
+        : runtimeImage
         ? ecs.ContainerImage.fromDockerImageAsset(runtimeImage)
         : ecs.ContainerImage.fromRegistry("public.ecr.aws/docker/library/nginx:1.27-alpine"),
       ...(id === "Api" ? { environment: { NODE_ENV: "production", PORT: "3000" } } : {}),
