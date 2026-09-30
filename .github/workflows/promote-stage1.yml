@@ -30,6 +30,7 @@ jobs:
   validate:
     name: Validate artifact and Stage 1 dry run
     runs-on: ubuntu-latest
+    environment: stage1
     timeout-minutes: 15
     env:
       AWS_REGION: us-east-1
