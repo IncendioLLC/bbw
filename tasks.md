@@ -2,8 +2,8 @@
 
 This is the authoritative execution graph for the Stage 1 platform. Dependencies listed here are unresolved prerequisites only; completed prerequisites are removed according to `implementation_rules.md`. Read `current_status.md` first for the latest concise implementation handoff.
 
-**Status summary:** 0 ready, 166 pending, 4 in progress, 0 blocked, 41 complete.  
-**Last synchronized:** 2026-09-27  
+**Status summary:** 6 ready, 158 pending, 0 in progress, 1 blocked, 48 complete.
+**Last synchronized:** 2026-09-30
 **Scope:** Engineering implementation and technical verification. Business-owned brand, legal, editorial, and launch-content approval are excluded.
 
 ## Milestone 1 — Workspace and Engineering Foundation
@@ -366,7 +366,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### INF-019 — Create shared application load balancer
 - Status: complete
-- Depends on: INF-015, INF-017
+- Depends on: none
 - Work area: edge and routing stack
 - Deliverable: HTTPS ALB routing public/member, API, and management hosts to isolated target groups.
 - Test plan: Assert listener rules and verify host routing, health failures, and HTTP-to-HTTPS redirects.
@@ -398,7 +398,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### INF-023 — Add Stage 1 deployment workflow
 - Status: blocked
-- Depends on: INF-015, INF-017, INF-022
+- Depends on: none
 - Work area: deployment workflow
 - Deliverable: Build, scan, migrate, deploy, smoke-test, and rollback pipeline for the single Stage 1 environment.
 - Test plan: Deploy a tagged revision and verify smoke success and an intentional rollback path.
@@ -416,7 +416,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### DAT-001 — Configure Drizzle for PostgreSQL
 - Status: ready
-- Depends on: ARC-003
+- Depends on: none
 - Work area: database package
 - Deliverable: Typed database client, migration configuration, TLS settings, and test transaction helper.
 - Test plan: Connect locally, run a transaction, and verify rollback plus connection cleanup.
@@ -432,7 +432,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### DAT-003 — Create identity and organization tables
 - Status: pending
-- Depends on: DAT-002, ARC-001
+- Depends on: DAT-002
 - Work area: identity schema
 - Deliverable: Users, organizations, organization members, invitations, roles, and consent records.
 - Test plan: Migration-test constraints, uniqueness, lifecycle states, and owner/member relationships.
@@ -488,7 +488,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### DAT-010 — Create operations and audit tables
 - Status: pending
-- Depends on: DAT-003, ARC-012
+- Depends on: DAT-003
 - Work area: operations schema
 - Deliverable: Feature flags, service usage, vendor costs, budgets, audit events, outbox, and idempotency records.
 - Test plan: Test append-only audit/usage semantics, actual-versus-estimated cost states, and unique idempotency keys.
@@ -552,7 +552,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### DAT-018 — Verify backup and point-in-time restore
 - Status: pending
-- Depends on: INF-008, DAT-017
+- Depends on: DAT-017
 - Work area: production database operations
 - Deliverable: Documented and exercised restore into an isolated database with integrity checks.
 - Test plan: Restore a timestamped backup and compare schema version plus representative row counts/checksums.
@@ -562,7 +562,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### IAM-001 — Provision the member Cognito user pool
 - Status: ready
-- Depends on: INF-001, INF-003
+- Depends on: none
 - Work area: identity infrastructure
 - Deliverable: Member pool/client with verified email, secure password policy, recovery, and protected attributes.
 - Test plan: CDK-test configuration and complete sign-up, verification, sign-in, refresh, and reset in nonprod.
@@ -570,7 +570,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### IAM-002 — Provision the management Cognito user pool
 - Status: ready
-- Depends on: INF-001, INF-003
+- Depends on: none
 - Work area: identity infrastructure
 - Deliverable: Separate admin pool/client with mandatory MFA, restricted enrollment, and shorter sessions.
 - Test plan: Prove self-registration is unavailable, MFA is required, and member credentials are rejected.
@@ -578,7 +578,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### IAM-003 — Implement JWT verification middleware
 - Status: pending
-- Depends on: ARC-003, IAM-001, IAM-002
+- Depends on: IAM-001, IAM-002
 - Work area: API authentication
 - Deliverable: Issuer/audience-separated member and admin token verification with key rotation caching.
 - Test plan: Integration-test valid, expired, wrong-pool, wrong-audience, malformed, and rotated-key tokens.
@@ -610,7 +610,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### IAM-007 — Implement member session integration
 - Status: pending
-- Depends on: IAM-003, ARC-004
+- Depends on: IAM-003
 - Work area: public/member authentication
 - Deliverable: Secure cookie session, refresh, sign-out, CSRF protections, and authenticated route guard.
 - Test plan: Playwright-test sign-in, refresh, sign-out, expiry, CSRF rejection, and redirect return URL.
@@ -618,7 +618,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### IAM-008 — Implement management session integration
 - Status: pending
-- Depends on: IAM-002, IAM-003, ARC-005
+- Depends on: IAM-002, IAM-003
 - Work area: management authentication
 - Deliverable: MFA-aware admin session, short idle timeout, reauthentication, and management-only route guard.
 - Test plan: Test MFA, idle expiry, member-token rejection, reauthentication, and sign-out.
@@ -658,7 +658,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### IAM-013 — Implement account export request
 - Status: pending
-- Depends on: IAM-004, DAT-014, INF-010
+- Depends on: IAM-004, DAT-014
 - Work area: privacy workflow
 - Deliverable: Tenant-scoped asynchronous export request with secure expiring delivery.
 - Test plan: Test ownership, deduplication, export contents, expiry, and access denial after expiry.
@@ -684,7 +684,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-001 — Implement public navigation and footer
 - Status: ready
-- Depends on: ARC-011, ARC-004
+- Depends on: none
 - Work area: public/member application
 - Deliverable: Responsive navigation, registration/sign-in actions, legal placeholders, accessibility link, and AI notice.
 - Test plan: Playwright-test landmarks, keyboard navigation, focus, mobile drawer, and route targets.
@@ -692,7 +692,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-002 — Implement public hero and prompt composer
 - Status: pending
-- Depends on: PUB-001, ARC-010
+- Depends on: PUB-001
 - Work area: public home
 - Deliverable: Slogan, dominant composer, approved example prompts, limitations, and loading/error states.
 - Test plan: Component-test validation and Playwright-test desktop/mobile first viewport hierarchy.
@@ -708,7 +708,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-004 — Implement public chat quota identity
 - Status: pending
-- Depends on: ARC-003, DAT-010
+- Depends on: DAT-010
 - Work area: public chat API
 - Deliverable: Privacy-conscious daily demonstration quota keyed by signed token and abuse signals.
 - Test plan: Test first request, daily limit, token tampering, clock boundary, and storage minimization.
@@ -740,7 +740,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-008 — Implement registration and verification pages
 - Status: pending
-- Depends on: IAM-005, ARC-010
+- Depends on: IAM-005
 - Work area: public/member identity UI
 - Deliverable: Register, verify email, resend, success, and error flows with consent capture.
 - Test plan: Playwright-test validation, duplicate account, resend throttle, expired code, and verified transition.
@@ -748,7 +748,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-009 — Implement sign-in and password recovery pages
 - Status: pending
-- Depends on: IAM-007, ARC-010
+- Depends on: IAM-007
 - Work area: public/member identity UI
 - Deliverable: Sign-in, forgot password, reset, sign-out, and session-expired experiences.
 - Test plan: Playwright-test success, invalid credentials, reset expiry, safe return URL, and session expiration.
@@ -772,7 +772,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-012 — Implement onboarding progress framework
 - Status: pending
-- Depends on: PUB-011, ARC-010
+- Depends on: PUB-011
 - Work area: member onboarding
 - Deliverable: Save/resume steps, required/optional labels, completion checklist, and leave/return behavior.
 - Test plan: Playwright-test refresh, resume, validation failure preservation, skip optional, and completion.
@@ -780,7 +780,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-013 — Add public SEO and non-indexing controls
 - Status: pending
-- Depends on: PUB-003, ARC-004
+- Depends on: PUB-003
 - Work area: public/member metadata
 - Deliverable: Public metadata, sitemap, robots policy, and explicit noindex for private/member/snapshot routes.
 - Test plan: Inspect rendered metadata and assert private route patterns are absent from sitemap and noindexed.
@@ -788,7 +788,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### PUB-014 — Add public experience analytics
 - Status: pending
-- Depends on: PUB-006, PUB-007, PUB-008, ARC-012
+- Depends on: PUB-006, PUB-007, PUB-008
 - Work area: public/member analytics
 - Deliverable: Privacy-safe home, prompt, news, registration, and role-selection events.
 - Test plan: Capture events and schema-validate payloads while proving prompts and sensitive fields are excluded.
@@ -854,7 +854,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### MEM-008 — Implement member workspace shell
 - Status: pending
-- Depends on: IAM-007, ARC-011, PUB-012
+- Depends on: IAM-007, PUB-012
 - Work area: member application shell
 - Deliverable: Role-aware navigation, organization switch context, account menu, breadcrumbs, and responsive layout.
 - Test plan: Playwright-test each role, direct routes, keyboard navigation, mobile drawer, and unauthorized links.
@@ -1026,7 +1026,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### AI-001 — Define AI provider interface
 - Status: ready
-- Depends on: ARC-001, ARC-002
+- Depends on: none
 - Work area: AI adapter package
 - Deliverable: Provider-neutral streaming, structured-output, embedding, usage, citation, timeout, and cancellation contracts.
 - Test plan: Contract-test a fake provider for success, stream interruption, refusal, timeout, and usage reporting.
@@ -1066,7 +1066,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### AI-006 — Implement embedding job
 - Status: pending
-- Depends on: AI-002, AI-005, INF-011
+- Depends on: AI-002, AI-005
 - Work area: worker and knowledge processing
 - Deliverable: Idempotent embedding generation and replacement for approved published versions only.
 - Test plan: Test publish, retry, duplicate event, supersession, provider failure, and retired-card exclusion.
@@ -1164,7 +1164,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### CNT-003 — Implement news ingestion adapter
 - Status: pending
-- Depends on: CNT-001, INF-011
+- Depends on: CNT-001
 - Work area: news adapter and worker
 - Deliverable: Provider-neutral feed/API fetcher producing normalized candidate items.
 - Test plan: Fixture-test valid feed, malformed item, timeout, pagination, rate limit, and source disable.
@@ -1260,7 +1260,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### CNT-015 — Add news and ecosystem analytics
 - Status: pending
-- Depends on: CNT-006, CNT-013, CNT-014, ARC-012
+- Depends on: CNT-006, CNT-013, CNT-014
 - Work area: content analytics
 - Deliverable: Privacy-safe news, filter, save, contact, and consultation events.
 - Test plan: Schema-validate captured events and prove private profile fields and request text are excluded.
@@ -1302,7 +1302,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### SHR-005 — Implement external-recipient email OTP
 - Status: pending
-- Depends on: SHR-003, INF-013
+- Depends on: SHR-003
 - Work area: snapshot external access
 - Deliverable: Recipient-specific OTP challenge with hashed code, expiry, attempt limit, resend throttle, and secure session.
 - Test plan: Test delivery, valid/invalid/expired code, brute-force lock, resend, wrong email, and session expiry.
@@ -1416,7 +1416,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### ADM-007 — Implement news and community management UI
 - Status: pending
-- Depends on: ADM-001, CNT-001, CNT-002, CNT-008, ARC-010
+- Depends on: ADM-001, CNT-001, CNT-002, CNT-008
 - Work area: management content UI
 - Deliverable: Source/item/community lists, editors, publication actions, stale-source review, and responsive states.
 - Test plan: Playwright-test create/edit/publish/unpublish/deactivate, validation, permissions, and audit reason.
@@ -1440,7 +1440,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### ADM-010 — Implement Knowledge Card management UI
 - Status: pending
-- Depends on: ADM-001, AI-004, AI-006, ARC-010
+- Depends on: ADM-001, AI-004, AI-006
 - Work area: management knowledge UI
 - Deliverable: Card editor, sources, review/approval, publish/supersede/retire, and embedding state.
 - Test plan: Playwright-test lifecycle, required metadata, immutable published version, failure retry, and permissions.
@@ -1456,7 +1456,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### ADM-012 — Implement usage aggregation jobs
 - Status: pending
-- Depends on: DAT-010, INF-012, ARC-012
+- Depends on: DAT-010
 - Work area: worker and operations data
 - Deliverable: Idempotent daily/hourly aggregates by date, environment, role, organization, and service.
 - Test plan: Test late events, rerun, timezone boundary, failed event, no double count, and source reconciliation.
@@ -1488,7 +1488,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### ADM-016 — Implement CSV exports
 - Status: pending
-- Depends on: ADM-012, ADM-013, ADM-015, INF-010
+- Depends on: ADM-012, ADM-013, ADM-015
 - Work area: management exports
 - Deliverable: Audited asynchronous usage and cost exports with formula-injection protection and expiring links.
 - Test plan: Test filters, large export, escaping, authorization, expiry, and audit event.
@@ -1504,7 +1504,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### ADM-018 — Implement management application shell and dashboard
 - Status: pending
-- Depends on: ARC-011, ADM-002, ADM-003, ADM-004, ADM-006, ADM-008, ADM-015, ADM-017
+- Depends on: ADM-002, ADM-003, ADM-004, ADM-006, ADM-008, ADM-015, ADM-017
 - Work area: management application UI
 - Deliverable: Separate role-protected navigation and first-view health, cost, moderation, and operations panels.
 - Test plan: Playwright-test MFA entry, navigation, direct-route guards, responsive layout, empty/error states, and member-app separation.
@@ -1514,7 +1514,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-001 — Implement outbox dispatcher
 - Status: pending
-- Depends on: DAT-014, ARC-006, INF-011
+- Depends on: DAT-014
 - Work area: worker
 - Deliverable: Concurrent-safe dispatcher from transactional outbox to typed SQS/EventBridge messages.
 - Test plan: Test competing workers, crash after publish, duplicate delivery, backoff, poison message, and tracing context.
@@ -1530,7 +1530,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-003 — Implement transactional email adapter
 - Status: pending
-- Depends on: INF-013, OPS-002
+- Depends on: OPS-002
 - Work area: email adapter and worker
 - Deliverable: Templated SES adapter with tagging, idempotency, suppression handling, and delivery-event correlation.
 - Test plan: Test render, send, duplicate event, bounce/complaint, suppression, kill switch, and safe logs.
@@ -1546,7 +1546,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-005 — Implement structured logging and redaction
 - Status: ready
-- Depends on: ARC-003, ARC-004, ARC-005, ARC-006
+- Depends on: none
 - Work area: all deployables
 - Deliverable: Correlated JSON logs with tenant/user pseudonymous IDs and enforced secret/content redaction.
 - Test plan: Capture representative logs and assert tokens, prompts, OTPs, secrets, and private fields are absent.
@@ -1562,7 +1562,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-007 — Implement service metrics
 - Status: pending
-- Depends on: OPS-005, INF-015, INF-017
+- Depends on: OPS-005
 - Work area: applications and monitoring infrastructure
 - Deliverable: Request, latency, error, saturation, queue, database, AI, email, news, and snapshot metrics.
 - Test plan: Generate success/failure/load signals and verify correct dimensions without high-cardinality leakage.
@@ -1594,7 +1594,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-011 — Implement scheduled retention jobs
 - Status: pending
-- Depends on: OPS-002, DAT-016, INF-012
+- Depends on: OPS-002, DAT-016
 - Work area: worker
 - Deliverable: Batched deletion/anonymization for expired chats, OTPs, links, exports, and operational records.
 - Test plan: Time-travel-test eligibility, batch resume, legal hold, failure recovery, and deletion counts.
@@ -1620,7 +1620,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### QA-001 — Add API contract test suite
 - Status: pending
-- Depends on: ARC-008, IAM-015, CMP-012, AI-013, CNT-015, SHR-012, ADM-018
+- Depends on: IAM-015, CMP-012, AI-013, CNT-015, SHR-012, ADM-018
 - Work area: API integration tests
 - Deliverable: Schema, error-envelope, pagination, authorization, and compatibility coverage for every Stage 1 route.
 - Test plan: Run against fresh local database and nonprod; fail on undocumented or incompatible responses.
