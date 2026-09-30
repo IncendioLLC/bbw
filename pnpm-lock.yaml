@@ -327,6 +327,10 @@ importers:
       react:
         specifier: 19.2.6
         version: 19.2.6
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
 
 packages:
 
