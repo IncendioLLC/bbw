@@ -109,11 +109,13 @@ jobs:
         run: |
           alb_dns=$(aws elbv2 describe-load-balancers --names bbw-stage1-edge --query 'LoadBalancers[0].DNSName' --output text)
           test -n "$alb_dns"
+          alb_ip=$(getent ahostsv4 "$alb_dns" | awk 'NR == 1 { print $1 }')
+          test -n "$alb_ip"
           curl --fail --silent --show-error --max-time 20 \
-            --resolve "$BBW_ADMIN_HOSTNAME:443:$alb_dns" \
+            --resolve "$BBW_ADMIN_HOSTNAME:443:$alb_ip" \
             "https://$BBW_ADMIN_HOSTNAME/" >/dev/null
           status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 20 \
-            --resolve "unknown.bbw.incendiollc.com:443:$alb_dns" \
+            --resolve "unknown.bbw.incendiollc.com:443:$alb_ip" \
             https://unknown.bbw.incendiollc.com/)
           test "$status" = "404"
 
@@ -136,8 +138,13 @@ jobs:
             variable=$(echo "${service}_task_definition" | tr '[:lower:]' '[:upper:]')
             task_definition="${!variable}"
             test -n "$task_definition"
-            aws ecs update-service --cluster bbw-stage1 --service "bbw-stage1-$service" \
-              --task-definition "$task_definition" --force-new-deployment >/dev/null
+            if test "$(aws ecs describe-task-definition --task-definition "$task_definition" \
+              --query 'taskDefinition.status' --output text 2>/dev/null || true)" = "ACTIVE"; then
+              aws ecs update-service --cluster bbw-stage1 --service "bbw-stage1-$service" \
+                --task-definition "$task_definition" --force-new-deployment >/dev/null
+            else
+              echo "Previous $service task definition is inactive; ECS circuit breaker already retained the stable revision."
+            fi
           done
           aws ecs wait services-stable --cluster bbw-stage1 \
             --services bbw-stage1-public bbw-stage1-api bbw-stage1-management bbw-stage1-worker
