@@ -2,7 +2,7 @@
 
 This is the authoritative execution graph for the Stage 1 platform. Dependencies listed here are unresolved prerequisites only; completed prerequisites are removed according to `implementation_rules.md`. Read `current_status.md` first for the latest concise implementation handoff.
 
-**Status summary:** 7 ready, 157 pending, 0 in progress, 0 blocked, 49 complete.
+**Status summary:** 7 ready, 156 pending, 0 in progress, 0 blocked, 50 complete.
 **Last synchronized:** 2026-09-30
 **Scope:** Engineering implementation and technical verification. Business-owned brand, legal, editorial, and launch-content approval are excluded.
 
@@ -405,12 +405,12 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: Imported the existing `bbw-stage1-edge` ALB, listeners, target groups, and host rules into `BbwStage1-stage1` through a CloudFormation import change set; all ten imported resources report `UPDATE_COMPLETE`, and public/API/management target groups are healthy. The deployment workflow now preserves SES/OIDC resources, includes ALB inspection permission, resolves the ALB hostname to an IP for curl, and guards rollback when ECS has retired the captured task definition. GitHub Actions run `36760481219` passed OIDC, quality/security gates, CDK synth/deploy, ECS stabilization, and ALB host-isolation smoke tests. Controlled invalid-image probe run `36761163607` injected `public.ecr.aws/bbw/definitely-invalid:rollback-probe`, produced repeated ECS image-pull failures, failed the deploy as expected, and completed the guarded restore step; all four ECS services returned to `COMPLETED` on their prior valid task definitions. CloudFormation cancellation was required because the ECS circuit breaker did not finish within the bounded probe window; this is recorded as an operational observation, not an unverified success claim.
 
 ### INF-024 — Add future production promotion workflow
-- Status: in_progress
+- Status: complete
 - Depends on: none
 - Work area: deployment workflow
 - Deliverable: Approval-gated artifact promotion contract retained for later multi-account production isolation, with Stage 1 dry-run support.
 - Test plan: Dry-run promotion, verify environment protection, provenance, smoke tests, and rollback command.
-- Verification evidence: pending
+- Verification evidence: Added `.github/workflows/promote-stage1.yml` and `docs/stage1-promotion.md`. The workflow requires an immutable 40-character artifact SHA and successful `deploy-stage1.yml` run, assumes AWS through the existing OIDC role, verifies all four Stage 1 ECS services are stable, runs ALB management-host/default-deny smoke checks, and prints exact rollback commands without changing infrastructure in dry-run mode. The `stage1-promotion` GitHub environment is configured with a required `IncendioLLC` reviewer and protected-branch policy. Dry-run workflow run `36764756951` passed provenance, OIDC identity, service stability, smoke checks, and rollback-command output. Real promotion remains fail-closed until a production account/target is provisioned.
 
 ## Milestone 4 — Data Model, Isolation, and Persistence
 
@@ -1610,7 +1610,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### OPS-013 — Create deployment and rollback runbooks
 - Status: pending
-- Depends on: INF-024, DAT-018
+- Depends on: DAT-018
 - Work area: operational documentation
 - Deliverable: Release, migration, rollback/roll-forward, restore, and emergency-disable procedures.
 - Test plan: Execute a nonprod release rehearsal including failed deploy, application rollback, and restore decision point.
@@ -1683,8 +1683,8 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 - Verification evidence: pending
 
 ### QA-009 — Verify secret and dependency posture
-- Status: pending
-- Depends on: INF-024
+- Status: ready
+- Depends on: none
 - Work area: repository and images
 - Deliverable: Clean history/worktree secret scan, SBOMs, image scans, lockfile audit, and documented exceptions.
 - Test plan: Run all scanners on release commit/images and require no unaccepted critical findings.
@@ -1732,7 +1732,7 @@ This is the authoritative execution graph for the Stage 1 platform. Dependencies
 
 ### QA-015 — Promote and verify production release
 - Status: pending
-- Depends on: QA-014, INF-024, OPS-013
+- Depends on: QA-014, OPS-013
 - Work area: production release
 - Deliverable: Approved artifact promotion, migrations, smoke verification, monitoring confirmation, and rollback readiness.
 - Test plan: Run production smoke tests for public, each member role, admin authentication, queues, email, AI, news, and snapshots without destructive test data.

@@ -3,9 +3,9 @@
 This is the concise handoff source for agents resuming implementation. It records current truth, not a full history. Read it before `tasks.md`, then inspect only the files relevant to the selected task.
 
 **Last updated:** 2026-09-30  
-**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-023`, `INF-021`  
-**Current phase:** Milestone 3 edge security and deployment workflow are deployed and verified; the future promotion workflow is ready  
-**Task status:** 7 ready, 157 pending, 0 in progress, 0 blocked, 49 complete
+**Updated through task:** `FND-001` through `FND-018`, `ARC-001` through `ARC-012`, `INF-001` through `INF-024`, `INF-021`  
+**Current phase:** Milestone 3 AWS infrastructure and delivery is complete; Milestone 4 work is ready to begin  
+**Task status:** 7 ready, 156 pending, 0 in progress, 0 blocked, 50 complete
 
 ## 1. Current objective
 
@@ -87,7 +87,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `progress.html` embedded data matches all 213 task records.
 - Dashboard JavaScript syntax and no-external-asset checks passed.
 - Live visual browser inspection was unavailable because the browser-control connection could not initialize.
-- All 49 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing; INF-023 verified the normal deployment workflow and its controlled invalid-image restore path in run `36761163607`.
+- All 50 completed tasks passed their defined test plans. INF-008/009 have live RDS configuration evidence and private ECS TLS smoke tasks with exit code 0; INF-014 has an ACTIVE container-insights ECS cluster and successful private Fargate smoke task; INF-013 has successful SES verification, tagged simulator delivery, and captured SQS event; INF-022 has a successful GitHub Actions OIDC identity and CDK synth run; INF-015 observed ECS automatic circuit-breaker rollback from invalid revision `:3` to healthy revision `:2`; INF-016 observed API database readiness, autoscaling configuration, and ECS automatic circuit-breaker rollback from invalid revision `:11` to healthy revision `:8`; INF-017 verified the private management service rollout, health, rollback configuration, and issued ACM certificate; INF-018 verified success consumption, retry-to-DLQ, autoscaling configuration, and task replacement/drain; INF-019 verified shared ALB HTTPS host routing, default deny behavior, redirects, and healthy public/API/management targets; INF-020 verified deployed CloudFront distributions, origin TLS, security headers, disabled caching, and member/management routing; INF-023 verified the normal deployment workflow and its controlled invalid-image restore path in run `36761163607`; INF-024 verified immutable artifact provenance, OIDC identity, Stage 1 stability/smoke checks, rollback command output, and the protected `stage1-promotion` environment in run `36764756951`.
 - INF-021 adds the WAF-specific evidence: both scopes are deployed, attached, logged, and exercised with allowed and blocked live requests.
 
 ## 6. Active, ready, and blocked work
@@ -102,7 +102,7 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 - `PUB-001` — Implement public navigation and footer.
 - `AI-001` — Define AI provider interface.
 - `OPS-005` — Implement structured logging and redaction.
-- `INF-024` — Add future production promotion workflow.
+- `QA-009` — Verify secret and dependency posture.
 
 ### Blocked
 - None.
@@ -128,6 +128,8 @@ Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation th
 6. After verification, report the status delta required by `implementation_rules.md`.
 
 ## 9. Recent verified completions
+
+- `INF-024` — Added an immutable, provenance-checked Stage 1 promotion dry run, protected future promotion environment, smoke checks, and rollback command output; run `36764756951` passed. Real promotion remains fail-closed until a production target exists.
 
 - `ARC-005` — Added independently buildable management Next.js shell with management-only navigation and deny-by-default access.
 - `ARC-006` — Added worker runtime with structured job lifecycle logs, health signal, graceful shutdown, and SIGTERM handling.
