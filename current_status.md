@@ -9,13 +9,13 @@ This is the concise handoff source for agents resuming implementation. It record
 
 ## 1. Current objective
 
-Continue Milestone 3 in the single Stage 1 AWS account. Environment isolation through AWS Organizations is deferred to a later milestone under ADR-0001.
+Begin Milestone 4 data-model and persistence work using the verified single-account Stage 1 foundation. Environment isolation through AWS Organizations remains deferred to a later milestone under ADR-0001.
 
 ## 2. Implementation state
 
 | Area | State | Current truth |
 |---|---|---|
-| Execution harness | Ready | `tasks.md`, `implementation_rules.md`, `current_status.md`, and `progress.html` exist. The graph contains 213 valid, acyclic tasks. |
+| Execution harness | Ready | `tasks.md`, `implementation_rules.md`, `current_status.md`, and `progress.html` exist. The graph contains 213 valid, acyclic tasks. The rules prohibit orphaned `in_progress` work, require infrastructure readiness/ownership preflights and global dependency audits, and keep an autonomous milestone loop active until completion or a genuine human blocker. |
 | Repository foundation | Complete | All 14 Milestone 1 tasks are verified: workspace/tooling, quality gates, tests, local services, security and license policy, CI, ADRs, and contributor onboarding. |
 | Public/member application | Scaffolded | `apps/web` has public/authenticated App Router groups and a no-store `/healthz` endpoint; identity integration remains later work. |
 | Management application | Scaffolded | `apps/admin` is independently buildable with management-only navigation and deny-by-default access. |

@@ -23,7 +23,9 @@ Only these states are valid:
 - `blocked`: cannot be completed because of a concrete external or technical blocker.
 - `complete`: implementation and the stated test plan have both been verified.
 
-Allowed transitions are `pending -> ready`, `ready -> in_progress`, `in_progress -> complete`, and `in_progress -> blocked`. A blocked task returns to `ready` only after its blocker is removed. Reopening a completed task requires a written reason in its verification evidence.
+Allowed transitions are `pending -> ready`, `ready -> in_progress`, `in_progress -> complete`, and `in_progress -> blocked`. `in_progress -> ready` is allowed only when the user explicitly interrupts, cancels, or reassigns the work; the handoff must state what changed and whether partial changes remain. A blocked task returns to `ready` only after its blocker is removed. Reopening a completed task requires a written reason in its verification evidence.
+
+`in_progress` means an agent or an active command is working on the task now. It is not a parking state. A task must not remain `in_progress` after the responsible agent sends its final response, stops working, or becomes unavailable.
 
 ## 3. Selecting and claiming work
 
@@ -33,6 +35,8 @@ Allowed transitions are `pending -> ready`, `ready -> in_progress`, `in_progress
 4. The coordinator changes the task to `in_progress` and records the assignee before implementation begins.
 5. An ordinary task should take 1-4 focused hours. Split it before implementation if it is larger, has multiple independent outcomes, or cannot be verified with one coherent test plan.
 6. Do not perform unrelated cleanup. Discovered work becomes a new task with explicit dependencies.
+7. Before claiming an infrastructure or external-integration task, run a readiness preflight: confirm required credentials, account and region, owner decisions, DNS or repository prerequisites, live resource names, CloudFormation ownership, and whether another deployment is active. If an owner-only prerequisite is missing, block only that task immediately and select another ready task.
+8. Before implementation, translate the deliverable and test plan into a short acceptance checklist. Confirm that every behavior being tested is actually implemented. Missing application behavior is implementation work inside the task, not a verification blocker.
 
 ## 4. Parallel agents
 
@@ -41,6 +45,8 @@ Allowed transitions are `pending -> ready`, `ready -> in_progress`, `in_progress
 - The coordinator alone edits `tasks.md`, `current_status.md`, and the progress snapshot in `progress.html`. Subagents report status deltas; they do not update the harness.
 - Before delegation, the coordinator gives each agent the task ID, allowed work area, acceptance condition, and required tests.
 - If overlap or conflicting assumptions appear, pause the affected tasks and resolve ownership before continuing.
+- Every `in_progress` task must map to one live agent or one active command. The coordinator audits this mapping before each status report. If no worker exists, the task is immediately resumed by the coordinator or moved to a truthful terminal state for the turn.
+- Deployments that mutate the same CloudFormation stack, ECS service, migration sequence, or shared environment must be serialized even when their source tasks are otherwise independent.
 
 ## 5. Implementation requirements
 
@@ -78,6 +84,14 @@ The coordinator then:
 9. Refreshes the embedded snapshot in `progress.html` and its synchronization timestamp.
 10. Validates task IDs, dependencies, states, summary counts, dashboard data, and graph acyclicity before scheduling more work.
 
+The completion transaction must also run a global dependency audit, not only inspect the task just completed:
+
+- No incomplete task may list a completed task in `Depends on`.
+- Every `pending` task must have at least one unresolved dependency.
+- Every `ready` task must say `Depends on: none`.
+- Every `in_progress` task must have a live owner.
+- Counts in `tasks.md`, `current_status.md`, and `progress.html` must match exactly.
+
 Task completion is one coordinator transaction: `tasks.md`, `current_status.md`, and `progress.html` must agree before another task is claimed.
 
 Git history preserves removed prerequisites. `Depends on` intentionally lists only unresolved prerequisites.
@@ -97,13 +111,39 @@ Git history preserves removed prerequisites. `Depends on` intentionally lists on
 ## 8. Blocking and failure handling
 
 - `blocked` requires a concrete reason, evidence of attempted resolution, and the condition that will unblock it.
+- `blocked` is reserved for a dependency the agent cannot satisfy itself, such as owner approval, unavailable credentials, DNS ownership, third-party account action, or a confirmed provider/platform condition. A bug, missing code, failed test, unfamiliar AWS behavior, or slow verification is not by itself a blocker.
 - A missing credential or owner decision blocks only the smallest affected task; continue other ready tasks.
 - Failed tests keep the task `in_progress` unless progress is impossible without an external change.
+- When verification fails, first determine whether the cause is missing implementation, incorrect configuration, stale live state, resource ownership, permissions, or a faulty test. Fix the cause and rerun the full test plan; do not report the failure as the task outcome while an autonomous corrective action remains.
+- Long-running cloud operations must use bounded polling with periodic diagnostics. Continue polling or diagnose and recover within the same working turn. Do not stop merely because ECS, CloudFormation, ACM, SES, DNS, or GitHub Actions is still converging.
+- Before any infrastructure deployment, inspect the target stack and resource ownership. Reuse or import existing resources when they are intended to be managed by the stack. Never allow overlapping deployments to the same stack; wait for, safely cancel, or recover the earlier operation before continuing.
+- A blocked record must name exactly what the user must do, where to do it, the expected result, and the command or check the agent will run afterward. Once the user reports completion, the agent verifies it and resumes automatically.
 - Never weaken assertions, authorization, accessibility checks, security controls, or quality thresholds merely to complete a task.
 - If a completed task later causes a regression, create a repair task, link it to the affected acceptance gate, and mark downstream gates blocked when appropriate.
 - When the recorded blocker is resolved, the coordinator must verify the unblock condition, change the task from `blocked` to `ready`, remove or update the blocker evidence, refresh `current_status.md` and `progress.html`, and automatically resume the next eligible ready task without waiting for a new user prompt. The coordinator must continue through the active milestone until its completion boundary or a new concrete blocker is reached.
 
-## 9. Progress dashboard
+## 9. Autonomous milestone execution loop
+
+When the user asks to continue through a milestone, that instruction remains active until the milestone is complete or genuinely blocked. The coordinator repeats this loop without waiting for another prompt:
+
+1. Reconcile all dependencies and task states globally.
+2. Claim one or more non-overlapping ready tasks in the active milestone.
+3. Implement every item in each task's acceptance checklist.
+4. Run the complete test plan and relevant regression checks.
+5. Fix failures and repeat verification while an autonomous path remains.
+6. Complete the atomic harness transaction for every verified task.
+7. Promote newly dependency-free tasks and immediately claim the next eligible work.
+8. Recalculate milestone status and continue from step 1.
+
+The agent may stop and send a final report only when one of these conditions is true:
+
+- Every task in the requested milestone is `complete`.
+- All unfinished tasks in that milestone are `blocked`, each blocker requires external human action, and no other ready task in the milestone can progress.
+- The user explicitly pauses, cancels, or changes the scope.
+
+Before stopping, there must be no orphaned `in_progress` task. An actively running remote job may remain `in_progress` only while the agent continues monitoring it; if work is being handed back to the user, record a truthful blocker or complete the verification first.
+
+## 10. Progress dashboard
 
 - `tasks.md` is authoritative; `progress.html` never changes task state.
 - Refresh the dashboard after every status or dependency update.
@@ -112,6 +152,6 @@ Git history preserves removed prerequisites. `Depends on` intentionally lists on
 - Verify total and per-status counts after every refresh.
 - Verify every task retains its milestone assignment and that per-milestone counts match `tasks.md`.
 
-## 10. Definition of engineering complete
+## 11. Definition of engineering complete
 
 Stage 1 engineering is complete only when every task is `complete`, all release gates pass, production rollback and restore procedures have been exercised, tenant-isolation tests pass, critical accessibility paths pass, and the production smoke suite passes. Business-owned brand, legal, editorial, and launch-content approval remains outside this engineering graph.
